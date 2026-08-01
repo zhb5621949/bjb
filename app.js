@@ -160,6 +160,7 @@
       specId: firstSpec?.id || "",
       length: firstSpec?.length ? String(firstSpec.length) : "",
       width: firstSpec?.width ? String(firstSpec.width) : "",
+      innerPages: "",
       quantity: "1",
       styles: "1",
       styleFee: "10",
@@ -330,6 +331,7 @@
     state.specId = firstSpec?.id || "";
     state.length = firstSpec?.length ? String(firstSpec.length) : "";
     state.width = firstSpec?.width ? String(firstSpec.width) : "";
+    state.innerPages = "";
     state.productOptions = optionStateFor(selectedProduct);
     state.resultVisible = false;
   }
@@ -347,7 +349,8 @@
     const width = Math.max(0, num(state.width));
     const quantity = Math.max(1, Math.floor(num(state.quantity, 1)));
     const styles = Math.max(1, Math.floor(num(state.styles, 1)));
-    if (!length || !width) return null;
+    const innerPages = product().category === "cookbook" ? Math.max(0, Math.floor(num(state.innerPages))) : 0;
+    if (!length || !width || (product().category === "cookbook" && !innerPages)) return null;
 
     const currentProduct = product();
     const areaEach = length * width;
@@ -371,6 +374,7 @@
       width,
       quantity,
       styles,
+      innerPages,
       areaEach,
       totalArea,
       materialCost,
@@ -424,6 +428,7 @@
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
+      result.product.category === "cookbook" ? `内页数量：${result.innerPages}页` : "",
       `数量：${result.quantity}张｜款数：${result.styles}款`,
       `材料/工艺：${optionText}`,
       `报价：${money(result.final)}（单张约 ${money(result.unit)}）`,
@@ -510,6 +515,7 @@
         ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
           ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
+          ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 页</dd></div>` : ""}
           <div><dt>单张面积</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
           <div><dt>品类基础费</dt><dd>${money(result.materialCost)}</dd></div>
@@ -573,6 +579,7 @@
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
+          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页数量</div><div class="inner-page-input"><label><span>内页数量</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="请输入数量"><i>页</i></label><small>菜谱类必填；当前仅记录在报价单中，暂不增加费用</small></div></div>` : ""}
           ${productOptionRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>总数量（张）</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
@@ -629,6 +636,10 @@
         state.resultVisible = false;
       }
     } else if (action === "calculate") {
+      if (product().category === "cookbook" && Math.floor(num(state.innerPages)) < 1) {
+        notify("请先输入内页数量");
+        return;
+      }
       latestResult = calculate();
       if (!latestResult) {
         notify("请先输入正确的长边和短边");
@@ -674,6 +685,7 @@
       const map = {
         length: "length",
         width: "width",
+        "inner-pages": "innerPages",
         quantity: "quantity",
         styles: "styles",
         "style-fee": "styleFee",

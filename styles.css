@@ -595,6 +595,58 @@ button {
   font-size: 10px;
 }
 
+.inner-page-input {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inner-page-input label {
+  position: relative;
+  width: 210px;
+}
+
+.inner-page-input label > span {
+  position: absolute;
+  top: -7px;
+  left: 9px;
+  z-index: 1;
+  padding: 0 4px;
+  color: #777e84;
+  background: white;
+  font-size: 8px;
+}
+
+.inner-page-input input {
+  width: 100%;
+  height: 42px;
+  padding: 0 40px 0 12px;
+  background: white;
+  border: 1px solid #ccd2d8;
+  border-radius: 5px;
+  outline: none;
+}
+
+.inner-page-input input:focus {
+  border-color: #555b61;
+  box-shadow: 0 0 0 3px rgba(255, 217, 40, 0.2);
+}
+
+.inner-page-input label > i {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  color: #8e9499;
+  font-size: 9px;
+  font-style: normal;
+  transform: translateY(-50%);
+}
+
+.inner-page-input > small {
+  color: #8d730e;
+  font-size: 9px;
+}
+
 .process-row {
   align-items: center;
 }
@@ -1377,6 +1429,11 @@ button {
 
   .size-inputs > small {
     width: 100%;
+  }
+
+  .inner-page-input {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .quantity-grid {
