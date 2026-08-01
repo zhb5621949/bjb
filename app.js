@@ -13,7 +13,7 @@
     { id: "other", name: "其他", description: "广告物料与印刷品" },
   ];
 
-  const defaultProducts = [
+  const legacyProducts = [
     { id: "ring-bound-cookbook", category: "cookbook", name: "铁环装菜谱本", rate: 58, minimum: 50, tone: "ink" },
     { id: "staple-bound-cookbook", category: "cookbook", name: "钉装菜谱本", rate: 48, minimum: 50, tone: "steel" },
     { id: "butterfly-cookbook", category: "cookbook", name: "蝴蝶装菜谱本", rate: 68, minimum: 50, tone: "violet" },
@@ -54,6 +54,10 @@
     { id: "glass-lettering", category: "other", name: "玻璃刻字", rate: 50, minimum: 50, tone: "silver" },
     { id: "copy-paper-print", category: "other", name: "打印纸打印", rate: 25, minimum: 40, tone: "ice" },
   ];
+
+  const defaultProducts = Array.isArray(window.PRODUCT_CATALOG) && window.PRODUCT_CATALOG.length
+    ? window.PRODUCT_CATALOG
+    : legacyProducts;
 
   const processGroups = [
     {
@@ -127,12 +131,14 @@
   let toastTimer = null;
 
   function freshState() {
+    const firstSpec = defaultProducts[0].specs?.[0];
     return {
       tab: "calculator",
       categoryId: productCategories[0].id,
       productId: defaultProducts[0].id,
-      length: "",
-      width: "",
+      specId: firstSpec?.id || "",
+      length: firstSpec?.length ? String(firstSpec.length) : "",
+      width: firstSpec?.width ? String(firstSpec.width) : "",
       quantity: "1",
       styles: "1",
       styleFee: "10",
@@ -157,11 +163,16 @@
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
       const savedProductId = saved.productId || saved.materialId;
       const selectedProduct = defaultProducts.find((item) => item.id === savedProductId) || defaultProducts[0];
+      const savedSpec = selectedProduct.specs?.find((item) => item.id === saved.specId);
+      const selectedSpec = savedSpec || selectedProduct.specs?.[0];
       return {
         ...freshState(),
         ...saved,
         productId: selectedProduct.id,
         categoryId: selectedProduct.category,
+        specId: selectedSpec?.id || "",
+        length: saved.length || (selectedSpec?.length ? String(selectedSpec.length) : ""),
+        width: saved.width || (selectedSpec?.width ? String(selectedSpec.width) : ""),
         selected: { ...freshState().selected, ...(saved.selected || {}) },
       };
     } catch {
@@ -289,6 +300,21 @@
     return settings.products.find((item) => item.id === state.productId) || settings.products[0];
   }
 
+  function currentSpec() {
+    return product().specs?.find((item) => item.id === state.specId) || null;
+  }
+
+  function selectProduct(productId) {
+    const selectedProduct = settings.products.find((item) => item.id === productId) || settings.products[0];
+    const firstSpec = selectedProduct.specs?.[0];
+    state.productId = selectedProduct.id;
+    state.categoryId = selectedProduct.category;
+    state.specId = firstSpec?.id || "";
+    state.length = firstSpec?.length ? String(firstSpec.length) : "";
+    state.width = firstSpec?.width ? String(firstSpec.width) : "";
+    state.resultVisible = false;
+  }
+
   function allProcesses() {
     return processGroups.flatMap((group) =>
       group.items.map((item) => ({
@@ -355,6 +381,7 @@
       unit: final / quantity,
       floorApplied: raw < floor,
       product: currentProduct,
+      spec: currentSpec(),
       processes: selectedProcesses(),
     };
   }
@@ -394,6 +421,7 @@
     const processText = result.processes.map((item) => item.name).join("、") || "无";
     return [
       `品类：${result.product.name}`,
+      result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
       `数量：${result.quantity}张｜款数：${result.styles}款`,
       `工艺：${processText}`,
@@ -431,6 +459,29 @@
       .join("");
   }
 
+  function productSpecificationPanel() {
+    const currentProduct = product();
+    const detailRows = [
+      ["外壳材料", currentProduct.shellMaterial],
+      ["内页/材料", currentProduct.innerMaterial],
+      ["外壳工艺", currentProduct.shellProcess],
+      ["内页/材料工艺", currentProduct.materialProcess],
+    ].filter(([, value]) => value);
+    return `
+      <div class="parameter-row specification-row">
+        <div class="row-label">产品规格</div>
+        <div class="specification-panel">
+          <div class="specification-heading"><b>选择常用尺寸</b><small>点击规格会自动填写长宽；定制尺寸请手动输入</small></div>
+          <div class="spec-preset-list">
+            ${(currentProduct.specs || []).map((spec) => `<button class="spec-preset ${spec.id === state.specId ? "selected" : ""}" data-action="spec" data-id="${attr(spec.id)}"><b>${escapeHtml(spec.label)}</b>${spec.custom ? "<small>手动输入</small>" : `<small>${spec.length}m × ${spec.width}m</small>`}</button>`).join("")}
+          </div>
+          <div class="product-notes">
+            ${detailRows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><p>${escapeHtml(value)}</p></div>`).join("")}
+          </div>
+        </div>
+      </div>`;
+  }
+
   function processRows() {
     return processGroups
       .map(
@@ -466,6 +517,7 @@
         <div class="final-price"><small>建议对客报价</small><strong>${money(result.final)}</strong><span>约 ${money(result.unit)} / 张</span></div>
         ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
+          ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
           <div><dt>单张面积</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
           <div><dt>品类基础费</dt><dd>${money(result.materialCost)}</dd></div>
@@ -539,6 +591,7 @@
         <div class="form-card">
           <div class="section-title"><i></i><div><h2>产品信息</h2><p>先选大类，再选择具体品类并填写生产参数</p></div></div>
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
+          ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
           ${processRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>总数量（张）</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
@@ -568,7 +621,7 @@
           <div class="brand"><span class="brand-mark">¥</span><div><strong>写真广告 · 智能算价器</strong><small>GitHub 在线版｜老板改价后客服自动同步</small></div></div>
           <div class="top-actions"><span class="sync-badge ${syncInfo.status}">${syncLabel}</span><button data-action="refresh-pricing">刷新价格</button><button class="${deferredInstallPrompt ? "" : "install-unavailable"}" data-action="install-app">安装到桌面</button><button data-action="reset-form">清空参数</button></div>
         </header>
-        <nav class="tabs"><button class="${state.tab === "calculator" ? "active" : ""}" data-action="tab" data-tab="calculator">智能算价</button><button class="${state.tab === "reference" ? "active" : ""}" data-action="tab" data-tab="reference">原表参考</button><span>价格资料版本：2023.07.18</span></nav>
+        <nav class="tabs"><button class="${state.tab === "calculator" ? "active" : ""}" data-action="tab" data-tab="calculator">智能算价</button><button class="${state.tab === "reference" ? "active" : ""}" data-action="tab" data-tab="reference">原表参考</button><span>产品规格已融合｜价格 V${syncInfo.version || 3}</span></nav>
         ${state.tab === "calculator" ? calculatorView() : referenceView()}
       </main>`;
   }
@@ -579,11 +632,22 @@
     const action = target.dataset.action;
     if (action === "category") {
       state.categoryId = target.dataset.id;
-      state.productId = settings.products.find((item) => item.category === state.categoryId)?.id || settings.products[0].id;
-      state.resultVisible = false;
+      selectProduct(settings.products.find((item) => item.category === state.categoryId)?.id || settings.products[0].id);
     } else if (action === "product") {
-      state.productId = target.dataset.id;
-      state.resultVisible = false;
+      selectProduct(target.dataset.id);
+    } else if (action === "spec") {
+      const selectedSpec = product().specs?.find((item) => item.id === target.dataset.id);
+      if (selectedSpec) {
+        state.specId = selectedSpec.id;
+        if (selectedSpec.custom) {
+          state.length = "";
+          state.width = "";
+        } else {
+          state.length = String(selectedSpec.length || "");
+          state.width = String(selectedSpec.width || "");
+        }
+        state.resultVisible = false;
+      }
     } else if (action === "calculate") {
       latestResult = calculate();
       if (!latestResult) {
@@ -652,6 +716,8 @@
           input?.focus();
         });
       } else if (field === "length" || field === "width") {
+        state.specId = "";
+        saveState();
         const areaNode = app.querySelector(".size-inputs > small");
         if (areaNode) {
           const area = num(state.length) * num(state.width);

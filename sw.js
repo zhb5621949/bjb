@@ -1,9 +1,10 @@
-const CACHE_NAME = "photo-pricing-shell-v2";
+const CACHE_NAME = "photo-pricing-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./product-data.js",
   "./catalog-data.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
