@@ -5,8 +5,10 @@ GitHub 在线智能算价器 · 老板改价说明
 2. 打开 data 文件夹，再打开 pricing.json。
 3. 点击右上角铅笔图标（Edit this file）。
 4. 修改对应项目的数字：
-   - rate：材料每平方米单价
-   - minimum：该材料默认最低价
+   - products：全部具体品类
+   - category：所属大类（cookbook 菜谱、menu 菜单、other 其他）
+   - rate：该品类每平方米单价
+   - minimum：该品类默认最低价
    - processFees：各项工艺加价
    - styleFeeDefault：默认每款费用
 5. 把最上面的 version 数字加 1。
@@ -23,8 +25,8 @@ GitHub 在线智能算价器 · 老板改价说明
 1. 在 GitHub 创建一个公开仓库，建议命名：photo-pricing-calculator。
 2. 上传本文件夹内的全部文件，必须保留 .github 文件夹。
 3. 打开仓库 Settings → Pages。
-4. 在 Build and deployment 的 Source 选择 GitHub Actions。
-5. 等待 Actions 页面显示绿色对勾。
+4. 在 Build and deployment 的 Source 选择 Deploy from a branch。
+5. 分支选择 main，文件夹选择 / (root)，然后保存。
 6. Pages 页面会显示客服访问网址，把该网址发给客服。
 
 四、安装到电脑

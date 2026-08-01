@@ -1,7 +1,7 @@
 {
   "name": "写真广告智能算价器",
   "short_name": "智能算价",
-  "description": "材质、尺寸、工艺、数量在线智能算价",
+  "description": "菜谱、菜单及其他广告品类在线智能算价",
   "lang": "zh-CN",
   "start_url": "./",
   "scope": "./",

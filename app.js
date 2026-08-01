@@ -7,31 +7,52 @@
   const hadSavedState = Boolean(localStorage.getItem(STORAGE_KEY));
   let deferredInstallPrompt = null;
 
-  const defaultMaterials = [
-    { id: "outdoor-adhesive", name: "户外背胶", rate: 35, minimum: 40, tone: "coral" },
-    { id: "outdoor-adhesive-standard", name: "户外背胶（标准款）", rate: 32, minimum: 40, tone: "sand" },
-    { id: "white-car-sticker", name: "白胶车贴", rate: 42, minimum: 40, tone: "blue" },
-    { id: "black-car-sticker", name: "黑胶车贴", rate: 46, minimum: 50, tone: "ink" },
-    { id: "removable-white", name: "可移白胶车贴", rate: 48, minimum: 50, tone: "cyan" },
-    { id: "removable-black", name: "可移黑胶车贴", rate: 52, minimum: 50, tone: "violet" },
-    { id: "air-release", name: "导气槽灰胶可移车贴", rate: 65, minimum: 50, tone: "steel" },
-    { id: "transparent-sticker", name: "透明车贴", rate: 45, minimum: 40, tone: "mint" },
-    { id: "photo-paper", name: "户外相纸", rate: 38, minimum: 40, tone: "rose" },
-    { id: "one-way-vision", name: "户外单透贴", rate: 48, minimum: 50, tone: "smoke" },
-    { id: "ceiling-film", name: "户外正喷灯片", rate: 45, minimum: 50, tone: "sun" },
-    { id: "poster-no-adhesive", name: "户外海报（不带胶）", rate: 36, minimum: 40, tone: "red" },
-    { id: "reflective", name: "反光膜", rate: 75, minimum: 50, tone: "silver" },
-    { id: "crystal-grid", name: "晶彩格", rate: 82, minimum: 50, tone: "amber" },
-    { id: "pvc-board", name: "户外PVC硬片", rate: 68, minimum: 50, tone: "ice" },
-    { id: "photo-cloth", name: "户外写真布", rate: 45, minimum: 40, tone: "canvas" },
-    { id: "photo-cloth-wide", name: "户外写真布（3米宽）", rate: 58, minimum: 50, tone: "canvas2" },
-    { id: "canvas", name: "户外油画布", rate: 55, minimum: 50, tone: "oil" },
-    { id: "canvas-wide", name: "户外油画布（3米宽）", rate: 68, minimum: 50, tone: "oil2" },
-    { id: "floor-film", name: "直喷磨砂膜", rate: 58, minimum: 50, tone: "lime" },
-    { id: "back-adhesive-canvas", name: "背胶油画布", rate: 62, minimum: 50, tone: "gold" },
-    { id: "pet-gray", name: "户外PET灰背", rate: 60, minimum: 50, tone: "gray" },
-    { id: "pet-white", name: "户外PET白背", rate: 60, minimum: 50, tone: "pearl" },
-    { id: "uv-night", name: "UV夜光贴", rate: 95, minimum: 50, tone: "night" },
+  const productCategories = [
+    { id: "cookbook", name: "菜谱", description: "装订菜谱、画册与内页" },
+    { id: "menu", name: "菜单", description: "门店菜单、灯片与卡片" },
+    { id: "other", name: "其他", description: "广告物料与印刷品" },
+  ];
+
+  const defaultProducts = [
+    { id: "ring-bound-cookbook", category: "cookbook", name: "铁环装菜谱本", rate: 58, minimum: 50, tone: "ink" },
+    { id: "staple-bound-cookbook", category: "cookbook", name: "钉装菜谱本", rate: 48, minimum: 50, tone: "steel" },
+    { id: "butterfly-cookbook", category: "cookbook", name: "蝴蝶装菜谱本", rate: 68, minimum: 50, tone: "violet" },
+    { id: "spiral-cookbook", category: "cookbook", name: "线圈菜谱本", rate: 55, minimum: 50, tone: "blue" },
+    { id: "laminated-cookbook", category: "cookbook", name: "过塑菜谱本", rate: 50, minimum: 40, tone: "cyan" },
+    { id: "coated-paper-inner-menu", category: "cookbook", name: "铜版纸内页菜单", rate: 38, minimum: 40, tone: "sand" },
+    { id: "cookbook-cover", category: "cookbook", name: "菜谱外壳", rate: 65, minimum: 50, tone: "gold" },
+    { id: "saddle-stitched-album", category: "cookbook", name: "骑马钉画册", rate: 42, minimum: 50, tone: "coral" },
+    { id: "perfect-bound-album", category: "cookbook", name: "胶装画册", rate: 48, minimum: 50, tone: "canvas" },
+
+    { id: "laminated-menu", category: "menu", name: "塑封菜单", rate: 45, minimum: 40, tone: "mint" },
+    { id: "pvc-menu", category: "menu", name: "PVC菜单", rate: 68, minimum: 50, tone: "ice" },
+    { id: "photo-menu", category: "menu", name: "写真菜单", rate: 38, minimum: 40, tone: "rose" },
+    { id: "tri-fold-menu", category: "menu", name: "三折页菜单", rate: 36, minimum: 40, tone: "sun" },
+    { id: "checklist-menu", category: "menu", name: "勾选菜单", rate: 35, minimum: 40, tone: "lime" },
+    { id: "banner-menu", category: "menu", name: "喷绘布菜单", rate: 35, minimum: 40, tone: "red" },
+    { id: "indoor-light-film-menu", category: "menu", name: "室内灯片菜单", rate: 45, minimum: 50, tone: "amber" },
+    { id: "takeaway-card", category: "menu", name: "外卖卡", rate: 32, minimum: 40, tone: "coral" },
+    { id: "voucher", category: "menu", name: "代金券", rate: 32, minimum: 40, tone: "violet" },
+    { id: "kt-board-menu", category: "menu", name: "KT板菜单", rate: 55, minimum: 50, tone: "pearl" },
+    { id: "photo-paper-menu", category: "menu", name: "相纸菜单", rate: 38, minimum: 40, tone: "blue" },
+    { id: "table-sign-menu", category: "menu", name: "台签菜单", rate: 55, minimum: 50, tone: "gold" },
+
+    { id: "business-card", category: "other", name: "名片", rate: 35, minimum: 40, tone: "ink" },
+    { id: "flyer", category: "other", name: "宣传单", rate: 32, minimum: 40, tone: "sand" },
+    { id: "kt-board-poster", category: "other", name: "KT板海报", rate: 55, minimum: 50, tone: "pearl" },
+    { id: "backlit-fabric", category: "other", name: "卡布灯箱布", rate: 58, minimum: 50, tone: "canvas2" },
+    { id: "stretch-lightbox-fabric", category: "other", name: "拉布灯箱布", rate: 58, minimum: 50, tone: "canvas" },
+    { id: "canvas", category: "other", name: "油画布", rate: 55, minimum: 50, tone: "oil" },
+    { id: "sticker", category: "other", name: "不干胶", rate: 42, minimum: 40, tone: "cyan" },
+    { id: "photo-poster", category: "other", name: "写真海报", rate: 36, minimum: 40, tone: "rose" },
+    { id: "banner", category: "other", name: "喷绘布", rate: 35, minimum: 40, tone: "red" },
+    { id: "indoor-light-film", category: "other", name: "室内灯片", rate: 45, minimum: 50, tone: "sun" },
+    { id: "glass-sticker", category: "other", name: "玻璃贴", rate: 35, minimum: 40, tone: "mint" },
+    { id: "one-way-vision", category: "other", name: "单透贴", rate: 48, minimum: 50, tone: "smoke" },
+    { id: "transparent-sticker", category: "other", name: "透明贴", rate: 45, minimum: 40, tone: "mint" },
+    { id: "car-sticker", category: "other", name: "车贴", rate: 46, minimum: 50, tone: "blue" },
+    { id: "glass-lettering", category: "other", name: "玻璃刻字", rate: 50, minimum: 50, tone: "silver" },
+    { id: "copy-paper-print", category: "other", name: "打印纸打印", rate: 25, minimum: 40, tone: "ice" },
   ];
 
   const processGroups = [
@@ -108,7 +129,8 @@
   function freshState() {
     return {
       tab: "calculator",
-      materialId: defaultMaterials[0].id,
+      categoryId: productCategories[0].id,
+      productId: defaultProducts[0].id,
       length: "",
       width: "",
       quantity: "1",
@@ -133,7 +155,15 @@
   function loadState() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      return { ...freshState(), ...saved, selected: { ...freshState().selected, ...(saved.selected || {}) } };
+      const savedProductId = saved.productId || saved.materialId;
+      const selectedProduct = defaultProducts.find((item) => item.id === savedProductId) || defaultProducts[0];
+      return {
+        ...freshState(),
+        ...saved,
+        productId: selectedProduct.id,
+        categoryId: selectedProduct.category,
+        selected: { ...freshState().selected, ...(saved.selected || {}) },
+      };
     } catch {
       return freshState();
     }
@@ -142,12 +172,12 @@
   function loadSettings() {
     try {
       const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
-      const savedMap = Object.fromEntries((saved.materials || []).map((item) => [item.id, item]));
+      const savedMap = Object.fromEntries((saved.products || saved.materials || []).map((item) => [item.id, item]));
       const defaultProcessFees = Object.fromEntries(
         processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
       );
       return {
-        materials: defaultMaterials.map((item) => ({ ...item, ...(savedMap[item.id] || {}) })),
+        products: defaultProducts.map((item) => ({ ...item, ...(savedMap[item.id] || {}) })),
         processFees: { ...defaultProcessFees, ...(saved.processFees || {}) },
         version: saved.version || 0,
         updatedAt: saved.updatedAt || "",
@@ -155,7 +185,7 @@
       };
     } catch {
       return {
-        materials: defaultMaterials.map((item) => ({ ...item })),
+        products: defaultProducts.map((item) => ({ ...item })),
         processFees: Object.fromEntries(
           processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
         ),
@@ -176,7 +206,7 @@
 
   function pricingFingerprint(value) {
     return JSON.stringify({
-      materials: value.materials || [],
+      products: value.products || [],
       processFees: value.processFees || {},
       styleFeeDefault: value.styleFeeDefault ?? 10,
     });
@@ -191,9 +221,9 @@
       const response = await fetch(`data/pricing.json?t=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error("sync failed");
       const remote = await response.json();
-      const remoteMap = Object.fromEntries((remote.materials || []).map((item) => [item.id, item]));
+      const remoteMap = Object.fromEntries((remote.products || remote.materials || []).map((item) => [item.id, item]));
       settings = {
-        materials: defaultMaterials.map((item) => ({ ...item, ...(remoteMap[item.id] || {}) })),
+        products: defaultProducts.map((item) => ({ ...item, ...(remoteMap[item.id] || {}) })),
         processFees: {
           ...Object.fromEntries(
             processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
@@ -255,8 +285,8 @@
     }).format(value || 0);
   }
 
-  function material() {
-    return settings.materials.find((item) => item.id === state.materialId) || settings.materials[0];
+  function product() {
+    return settings.products.find((item) => item.id === state.productId) || settings.products[0];
   }
 
   function allProcesses() {
@@ -282,10 +312,10 @@
     const styles = Math.max(1, Math.floor(num(state.styles, 1)));
     if (!length || !width) return null;
 
-    const currentMaterial = material();
+    const currentProduct = product();
     const areaEach = length * width;
     const totalArea = areaEach * quantity;
-    const materialCost = totalArea * num(currentMaterial.rate);
+    const materialCost = totalArea * num(currentProduct.rate);
     const styleCost = styles * Math.max(0, num(state.styleFee));
     let areaProcessCost = 0;
     let pieceProcessCost = 0;
@@ -300,7 +330,7 @@
     const raw = materialCost + styleCost + areaProcessCost + pieceProcessCost + styleProcessCost;
     const floor =
       state.minimumMode === "material"
-        ? num(currentMaterial.minimum, 40)
+        ? num(currentProduct.minimum, 40)
         : state.minimumMode === "40"
           ? 40
           : state.minimumMode === "50"
@@ -324,7 +354,7 @@
       final,
       unit: final / quantity,
       floorApplied: raw < floor,
-      material: currentMaterial,
+      product: currentProduct,
       processes: selectedProcesses(),
     };
   }
@@ -363,23 +393,36 @@
   function resultText(result) {
     const processText = result.processes.map((item) => item.name).join("、") || "无";
     return [
-      `产品：${result.material.name}`,
+      `品类：${result.product.name}`,
       `尺寸：${result.length}m × ${result.width}m`,
       `数量：${result.quantity}张｜款数：${result.styles}款`,
       `工艺：${processText}`,
       `报价：${money(result.final)}（单张约 ${money(result.unit)}）`,
       result.floorApplied ? `已执行最低价：${money(result.floor)}` : "",
-      "最终价格以确认文件、实际材料和生产要求为准。",
+      "最终价格以确认文件、实际品类和生产要求为准。",
     ]
       .filter(Boolean)
       .join("\n");
   }
 
-  function materialCards() {
-    return settings.materials
+  function categoryTabs() {
+    return productCategories
+      .map(
+        (category) => `
+          <button class="category-tab ${category.id === state.categoryId ? "selected" : ""}" data-action="category" data-id="${attr(category.id)}">
+            <strong>${escapeHtml(category.name)}</strong>
+            <small>${escapeHtml(category.description)}</small>
+          </button>`,
+      )
+      .join("");
+  }
+
+  function productCards() {
+    return settings.products
+      .filter((item) => item.category === state.categoryId)
       .map(
         (item) => `
-          <button class="material-card ${item.id === state.materialId ? "selected" : ""}" data-action="material" data-id="${attr(item.id)}">
+          <button class="material-card ${item.id === state.productId ? "selected" : ""}" data-action="product" data-id="${attr(item.id)}">
             <span class="material-swatch ${attr(item.tone)}"><b>${escapeHtml(item.name.slice(0, 1))}</b></span>
             <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${money(item.rate)}/㎡ · 起步${money(item.minimum)}</small></span>
             <i>✓</i>
@@ -413,19 +456,19 @@
     if (!result) {
       return `
         <aside class="result-panel">
-          <div class="result-empty"><span>¥</span><h2>等待算价</h2><p>选择材质，输入长宽、数量和款数后，即可计算。</p></div>
+          <div class="result-empty"><span>¥</span><h2>等待算价</h2><p>选择品类，输入长宽、数量和款数后，即可计算。</p></div>
           <div class="floor-rule"><b>最低价保护</b><p>即使实际计算低于起步价，也会按您选择的 40 元、50 元或自定义最低价报价。</p></div>
         </aside>`;
     }
     return `
       <aside class="result-panel ready">
-        <div class="result-heading"><span>算价结果</span><small>${result.material.name}</small></div>
+        <div class="result-heading"><span>算价结果</span><small>${result.product.name}</small></div>
         <div class="final-price"><small>建议对客报价</small><strong>${money(result.final)}</strong><span>约 ${money(result.unit)} / 张</span></div>
         ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
           <div><dt>单张面积</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
-          <div><dt>材料费</dt><dd>${money(result.materialCost)}</dd></div>
+          <div><dt>品类基础费</dt><dd>${money(result.materialCost)}</dd></div>
           <div><dt>面积工艺</dt><dd>${money(result.areaProcessCost)}</dd></div>
           <div><dt>按张工艺</dt><dd>${money(result.pieceProcessCost)}</dd></div>
           <div><dt>款式/设计</dt><dd>${money(result.styleCost + result.styleProcessCost)}</dd></div>
@@ -433,7 +476,7 @@
         </dl>
         <div class="selected-processes"><b>已选工艺</b><p>${result.processes.map((item) => escapeHtml(item.name)).join("、") || "无"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">计算公式：面积 × 材料单价 + 工艺费 + 款式费，再与最低价比较并向上取整。</p>
+        <p class="calculation-note">计算公式：面积 × 品类单价 + 工艺费 + 款式费，再与最低价比较并向上取整。</p>
       </aside>`;
   }
 
@@ -463,12 +506,12 @@
     return `
       <div class="modal-backdrop" data-action="close-settings">
         <section class="settings-modal" data-modal>
-          <header><div><span class="eyebrow">本地报价规则</span><h2>材料价格设置</h2><p>修改后只保存在这台电脑。材料单价按每平方米计。</p></div><button data-action="close-settings">×</button></header>
+          <header><div><span class="eyebrow">本地报价规则</span><h2>品类价格设置</h2><p>修改后只保存在这台电脑。品类单价按每平方米计。</p></div><button data-action="close-settings">×</button></header>
           <div class="settings-table">
-            <div class="settings-row settings-title"><span>材料</span><span>单价（元/㎡）</span><span>默认最低价</span></div>
-            ${settings.materials
+            <div class="settings-row settings-title"><span>具体品类</span><span>单价（元/㎡）</span><span>默认最低价</span></div>
+            ${settings.products
               .map(
-                (item) => `<div class="settings-row"><strong>${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-setting="rate" data-material-id="${attr(item.id)}" value="${attr(item.rate)}"><select data-setting="minimum" data-material-id="${attr(item.id)}"><option value="40" ${item.minimum === 40 ? "selected" : ""}>40 元</option><option value="50" ${item.minimum === 50 ? "selected" : ""}>50 元</option></select></div>`,
+                (item) => `<div class="settings-row"><strong>${escapeHtml(productCategories.find((category) => category.id === item.category)?.name || "其他")} · ${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-setting="rate" data-product-id="${attr(item.id)}" value="${attr(item.rate)}"><select data-setting="minimum" data-product-id="${attr(item.id)}"><option value="40" ${item.minimum === 40 ? "selected" : ""}>40 元</option><option value="50" ${item.minimum === 50 ? "selected" : ""}>50 元</option></select></div>`,
               )
               .join("")}
           </div>
@@ -489,23 +532,23 @@
   }
 
   function calculatorView() {
-    const currentMaterial = material();
+    const currentProduct = product();
     latestResult = state.resultVisible ? calculate() : null;
     return `
       <section class="calculator-layout">
         <div class="form-card">
-          <div class="section-title"><i></i><div><h2>产品信息</h2><p>选择材质并填写生产参数</p></div></div>
-          <div class="parameter-row material-row"><div class="row-label">材料</div><div class="materials">${materialCards()}</div></div>
+          <div class="section-title"><i></i><div><h2>产品信息</h2><p>先选大类，再选择具体品类并填写生产参数</p></div></div>
+          <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
           ${processRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>总数量（张）</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
-            <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随材质</b><small>${money(currentMaterial.minimum)}</small></label>
+            <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随品类</b><small>${money(currentProduct.minimum)}</small></label>
             <label class="${state.minimumMode === "40" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="40" ${state.minimumMode === "40" ? "checked" : ""}><b>最低 40 元</b></label>
             <label class="${state.minimumMode === "50" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="50" ${state.minimumMode === "50" ? "checked" : ""}><b>最低 50 元</b></label>
             <label class="${state.minimumMode === "custom" ? "selected" : ""} custom-minimum"><input type="radio" name="minimum" data-minimum="custom" ${state.minimumMode === "custom" ? "checked" : ""}><b>自定义</b><input type="number" min="0" data-field="custom-minimum" value="${attr(state.customMinimum)}"><small>元</small></label>
           </div></div>
-          <div class="calculate-bar"><div><span>当前材质</span><b>${escapeHtml(currentMaterial.name)}</b><small>${money(currentMaterial.rate)}/㎡</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
+          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${money(currentProduct.rate)}/㎡</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
         </div>
         ${resultPanel(latestResult)}
       </section>`;
@@ -534,8 +577,13 @@
     const target = event.target.closest("[data-action]");
     if (!target) return;
     const action = target.dataset.action;
-    if (action === "material") {
-      state.materialId = target.dataset.id;
+    if (action === "category") {
+      state.categoryId = target.dataset.id;
+      state.productId = settings.products.find((item) => item.category === state.categoryId)?.id || settings.products[0].id;
+      state.resultVisible = false;
+    } else if (action === "product") {
+      state.productId = target.dataset.id;
+      state.resultVisible = false;
     } else if (action === "calculate") {
       latestResult = calculate();
       if (!latestResult) {
@@ -614,7 +662,7 @@
     }
     const setting = event.target.dataset.setting;
     if (setting) {
-      const item = settings.materials.find((entry) => entry.id === event.target.dataset.materialId);
+      const item = settings.products.find((entry) => entry.id === event.target.dataset.productId);
       if (item) item[setting] = num(event.target.value);
     } else if (event.target.dataset.processSetting) {
       settings.processFees[event.target.dataset.processSetting] = Math.max(0, num(event.target.value));
@@ -640,7 +688,7 @@
       saveState();
       render();
     } else if (event.target.dataset.setting === "minimum") {
-      const item = settings.materials.find((entry) => entry.id === event.target.dataset.materialId);
+      const item = settings.products.find((entry) => entry.id === event.target.dataset.productId);
       if (item) item.minimum = num(event.target.value, 40);
     }
   });
