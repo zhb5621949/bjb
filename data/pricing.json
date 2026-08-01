@@ -1,7 +1,7 @@
 {
-  "version": 3,
-  "updatedAt": "2026-08-01T12:00:00+08:00",
-  "note": "融合产品种类和规格表：36个细分产品、常用尺寸预设、材料与工艺说明",
+  "version": 4,
+  "updatedAt": "2026-08-01T16:00:00+08:00",
+  "note": "材料与工艺改为随产品变化的专用选项，移除通用印色、覆膜、裁切、其他和参样选项",
   "styleFeeDefault": 10,
   "categories": [
     { "id": "cookbook", "name": "菜谱" },
@@ -48,28 +48,5 @@
     { "id": "glass-lettering", "category": "other", "name": "玻璃刻字", "rate": 50, "minimum": 50, "tone": "silver" },
     { "id": "copy-paper-print", "category": "other", "name": "打印纸打印", "rate": 25, "minimum": 40, "tone": "ice" }
   ],
-  "processFees": {
-    "four-color": 0,
-    "eight-color": 8,
-    "epson": 12,
-    "uv-print": 20,
-    "glossy": 6,
-    "matte": 7,
-    "floor-matte": 12,
-    "floor-diagonal": 13,
-    "cross": 10,
-    "sparkle": 12,
-    "crystal": 15,
-    "skin": 18,
-    "erasable": 18,
-    "cut-normal": 0,
-    "cut-shape": 3,
-    "no-cut": 0,
-    "half-cut": 1.5,
-    "eyelets": 2,
-    "rounded": 1,
-    "pack": 1,
-    "follow-sample": 5,
-    "keep-sample": 3
-  }
+  "optionFees": {}
 }
