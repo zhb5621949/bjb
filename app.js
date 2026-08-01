@@ -171,8 +171,8 @@
         productId: selectedProduct.id,
         categoryId: selectedProduct.category,
         specId: selectedSpec?.id || "",
-        length: saved.length || (selectedSpec?.length ? String(selectedSpec.length) : ""),
-        width: saved.width || (selectedSpec?.width ? String(selectedSpec.width) : ""),
+        length: savedSpec ? (saved.length || (selectedSpec?.length ? String(selectedSpec.length) : "")) : (selectedSpec?.length ? String(selectedSpec.length) : ""),
+        width: savedSpec ? (saved.width || (selectedSpec?.width ? String(selectedSpec.width) : "")) : (selectedSpec?.width ? String(selectedSpec.width) : ""),
         selected: { ...freshState().selected, ...(saved.selected || {}) },
       };
     } catch {
