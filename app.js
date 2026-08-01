@@ -130,6 +130,27 @@
   let latestResult = null;
   let toastTimer = null;
 
+  function optionStateFor(selectedProduct) {
+    return Object.fromEntries(
+      (selectedProduct.optionGroups || []).map((group) => [
+        group.id,
+        group.type === "single" && group.items[0] ? [group.items[0].id] : [],
+      ]),
+    );
+  }
+
+  function normalizeOptionState(selectedProduct, savedOptions) {
+    const defaults = optionStateFor(selectedProduct);
+    if (!savedOptions) return defaults;
+    return Object.fromEntries(
+      (selectedProduct.optionGroups || []).map((group) => {
+        const validIds = new Set(group.items.map((item) => item.id));
+        const savedIds = Array.isArray(savedOptions[group.id]) ? savedOptions[group.id].filter((id) => validIds.has(id)) : [];
+        return [group.id, group.type === "single" ? (savedIds.length ? [savedIds[0]] : defaults[group.id]) : savedIds];
+      }),
+    );
+  }
+
   function freshState() {
     const firstSpec = defaultProducts[0].specs?.[0];
     return {
@@ -144,13 +165,7 @@
       styleFee: "10",
       minimumMode: "material",
       customMinimum: "40",
-      selected: {
-        print: ["four-color"],
-        lamination: [],
-        cut: ["cut-normal"],
-        other: [],
-        sample: [],
-      },
+      productOptions: optionStateFor(defaultProducts[0]),
       referenceQuery: "",
       resultVisible: false,
       settingsOpen: false,
@@ -173,7 +188,7 @@
         specId: selectedSpec?.id || "",
         length: savedSpec ? (saved.length || (selectedSpec?.length ? String(selectedSpec.length) : "")) : (selectedSpec?.length ? String(selectedSpec.length) : ""),
         width: savedSpec ? (saved.width || (selectedSpec?.width ? String(selectedSpec.width) : "")) : (selectedSpec?.width ? String(selectedSpec.width) : ""),
-        selected: { ...freshState().selected, ...(saved.selected || {}) },
+        productOptions: normalizeOptionState(selectedProduct, saved.productOptions),
       };
     } catch {
       return freshState();
@@ -190,6 +205,7 @@
       return {
         products: defaultProducts.map((item) => ({ ...item, ...(savedMap[item.id] || {}) })),
         processFees: { ...defaultProcessFees, ...(saved.processFees || {}) },
+        optionFees: { ...(saved.optionFees || {}) },
         version: saved.version || 0,
         updatedAt: saved.updatedAt || "",
         styleFeeDefault: saved.styleFeeDefault ?? 10,
@@ -200,6 +216,7 @@
         processFees: Object.fromEntries(
           processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
         ),
+        optionFees: {},
         version: 0,
         updatedAt: "",
         styleFeeDefault: 10,
@@ -218,7 +235,7 @@
   function pricingFingerprint(value) {
     return JSON.stringify({
       products: value.products || [],
-      processFees: value.processFees || {},
+      optionFees: value.optionFees || {},
       styleFeeDefault: value.styleFeeDefault ?? 10,
     });
   }
@@ -241,6 +258,7 @@
           ),
           ...(remote.processFees || {}),
         },
+        optionFees: { ...(remote.optionFees || {}) },
         version: remote.version || 1,
         updatedAt: remote.updatedAt || "",
         styleFeeDefault: remote.styleFeeDefault ?? 10,
@@ -312,23 +330,16 @@
     state.specId = firstSpec?.id || "";
     state.length = firstSpec?.length ? String(firstSpec.length) : "";
     state.width = firstSpec?.width ? String(firstSpec.width) : "";
+    state.productOptions = optionStateFor(selectedProduct);
     state.resultVisible = false;
   }
 
-  function allProcesses() {
-    return processGroups.flatMap((group) =>
-      group.items.map((item) => ({
-        ...item,
-        fee: settings.processFees[item.id] ?? item.fee,
-        groupId: group.id,
-        groupName: group.name,
-      })),
+  function selectedProductOptions() {
+    return (product().optionGroups || []).flatMap((group) =>
+      group.items
+        .filter((item) => (state.productOptions[group.id] || []).includes(item.id))
+        .map((item) => ({ ...item, groupId: group.id, groupName: group.name, fee: settings.optionFees[item.id] ?? item.fee ?? 0 })),
     );
-  }
-
-  function selectedProcesses() {
-    const selectedIds = Object.values(state.selected).flat();
-    return allProcesses().filter((item) => selectedIds.includes(item.id));
   }
 
   function calculate() {
@@ -343,17 +354,9 @@
     const totalArea = areaEach * quantity;
     const materialCost = totalArea * num(currentProduct.rate);
     const styleCost = styles * Math.max(0, num(state.styleFee));
-    let areaProcessCost = 0;
-    let pieceProcessCost = 0;
-    let styleProcessCost = 0;
-
-    selectedProcesses().forEach((item) => {
-      if (item.unit === "sqm") areaProcessCost += totalArea * item.fee;
-      else if (item.unit === "piece") pieceProcessCost += quantity * item.fee;
-      else if (item.unit === "style") styleProcessCost += styles * item.fee;
-    });
-
-    const raw = materialCost + styleCost + areaProcessCost + pieceProcessCost + styleProcessCost;
+    const selectedOptions = selectedProductOptions();
+    const optionCost = selectedOptions.reduce((sum, item) => sum + totalArea * num(item.fee), 0);
+    const raw = materialCost + styleCost + optionCost;
     const floor =
       state.minimumMode === "material"
         ? num(currentProduct.minimum, 40)
@@ -372,9 +375,7 @@
       totalArea,
       materialCost,
       styleCost,
-      areaProcessCost,
-      pieceProcessCost,
-      styleProcessCost,
+      optionCost,
       raw,
       floor,
       final,
@@ -382,7 +383,7 @@
       floorApplied: raw < floor,
       product: currentProduct,
       spec: currentSpec(),
-      processes: selectedProcesses(),
+      options: selectedOptions,
     };
   }
 
@@ -418,13 +419,13 @@
   }
 
   function resultText(result) {
-    const processText = result.processes.map((item) => item.name).join("、") || "无";
+    const optionText = result.options.map((item) => `${item.groupName}：${item.name}`).join("；") || "未选择";
     return [
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
       `数量：${result.quantity}张｜款数：${result.styles}款`,
-      `工艺：${processText}`,
+      `材料/工艺：${optionText}`,
       `报价：${money(result.final)}（单张约 ${money(result.unit)}）`,
       result.floorApplied ? `已执行最低价：${money(result.floor)}` : "",
       "最终价格以确认文件、实际品类和生产要求为准。",
@@ -461,12 +462,6 @@
 
   function productSpecificationPanel() {
     const currentProduct = product();
-    const detailRows = [
-      ["外壳材料", currentProduct.shellMaterial],
-      ["内页/材料", currentProduct.innerMaterial],
-      ["外壳工艺", currentProduct.shellProcess],
-      ["内页/材料工艺", currentProduct.materialProcess],
-    ].filter(([, value]) => value);
     return `
       <div class="parameter-row specification-row">
         <div class="row-label">产品规格</div>
@@ -475,26 +470,23 @@
           <div class="spec-preset-list">
             ${(currentProduct.specs || []).map((spec) => `<button class="spec-preset ${spec.id === state.specId ? "selected" : ""}" data-action="spec" data-id="${attr(spec.id)}"><b>${escapeHtml(spec.label)}</b>${spec.custom ? "<small>手动输入</small>" : `<small>${spec.length}m × ${spec.width}m</small>`}</button>`).join("")}
           </div>
-          <div class="product-notes">
-            ${detailRows.map(([label, value]) => `<div><span>${escapeHtml(label)}</span><p>${escapeHtml(value)}</p></div>`).join("")}
-          </div>
         </div>
       </div>`;
   }
 
-  function processRows() {
-    return processGroups
+  function productOptionRows() {
+    return (product().optionGroups || [])
       .map(
         (group) => `
-          <div class="parameter-row process-row">
+          <div class="parameter-row product-option-row">
             <div class="row-label">${escapeHtml(group.name)}</div>
             <div class="checks">
               ${group.items
                 .map((item) => {
-                  const checked = state.selected[group.id].includes(item.id);
-                  const fee = settings.processFees[item.id] ?? item.fee;
-                  const suffix = fee ? ` +${fee}${item.unit === "sqm" ? "/㎡" : item.unit === "piece" ? "/张" : "/款"}` : "";
-                  return `<label class="check-item ${checked ? "checked" : ""}"><input type="${group.type === "single" ? "radio" : "checkbox"}" name="${attr(group.id)}" data-process-group="${attr(group.id)}" data-process="${attr(item.id)}" ${checked ? "checked" : ""}><span class="fake-check"></span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(suffix)}</small></label>`;
+                  const checked = (state.productOptions[group.id] || []).includes(item.id);
+                  const fee = settings.optionFees[item.id] ?? item.fee ?? 0;
+                  const suffix = fee ? ` +${fee}/㎡` : "";
+                  return `<label class="check-item ${checked ? "checked" : ""}"><input type="${group.type === "single" ? "radio" : "checkbox"}" name="${attr(`${product().id}-${group.id}`)}" data-option-group="${attr(group.id)}" data-option="${attr(item.id)}" ${checked ? "checked" : ""}><span class="fake-check"></span><b>${escapeHtml(item.name)}</b><small>${escapeHtml(suffix)}</small></label>`;
                 })
                 .join("")}
             </div>
@@ -521,14 +513,13 @@
           <div><dt>单张面积</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
           <div><dt>品类基础费</dt><dd>${money(result.materialCost)}</dd></div>
-          <div><dt>面积工艺</dt><dd>${money(result.areaProcessCost)}</dd></div>
-          <div><dt>按张工艺</dt><dd>${money(result.pieceProcessCost)}</dd></div>
-          <div><dt>款式/设计</dt><dd>${money(result.styleCost + result.styleProcessCost)}</dd></div>
+          <div><dt>材料/工艺加价</dt><dd>${money(result.optionCost)}</dd></div>
+          <div><dt>款式/设计</dt><dd>${money(result.styleCost)}</dd></div>
           <div class="raw-total"><dt>计算原价</dt><dd>${money(result.raw)}</dd></div>
         </dl>
-        <div class="selected-processes"><b>已选工艺</b><p>${result.processes.map((item) => escapeHtml(item.name)).join("、") || "无"}</p></div>
+        <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">计算公式：面积 × 品类单价 + 工艺费 + 款式费，再与最低价比较并向上取整。</p>
+        <p class="calculation-note">计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。</p>
       </aside>`;
   }
 
@@ -567,17 +558,6 @@
               )
               .join("")}
           </div>
-          <div class="settings-subtitle"><h3>工艺加价设置</h3><p>0 表示不额外收费；计费单位按右侧显示。</p></div>
-          <div class="settings-table process-settings">
-            <div class="settings-row settings-title"><span>工艺</span><span>加价</span><span>计费单位</span></div>
-            ${processGroups
-              .flatMap((group) =>
-                group.items.map(
-                  (item) => `<div class="settings-row"><strong>${escapeHtml(group.name)} · ${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-process-setting="${attr(item.id)}" value="${attr(settings.processFees[item.id] ?? item.fee)}"><span class="setting-unit">${item.unit === "sqm" ? "元 / 平方米" : item.unit === "piece" ? "元 / 张" : "元 / 款"}</span></div>`,
-                ),
-              )
-              .join("")}
-          </div>
           <footer><button class="text-button" data-action="reset-settings">恢复默认价格</button><button class="primary" data-action="save-settings">保存设置</button></footer>
         </section>
       </div>`;
@@ -593,7 +573,7 @@
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
-          ${processRows()}
+          ${productOptionRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>总数量（张）</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
             <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随品类</b><small>${money(currentProduct.minimum)}</small></label>
@@ -730,23 +710,23 @@
     if (setting) {
       const item = settings.products.find((entry) => entry.id === event.target.dataset.productId);
       if (item) item[setting] = num(event.target.value);
-    } else if (event.target.dataset.processSetting) {
-      settings.processFees[event.target.dataset.processSetting] = Math.max(0, num(event.target.value));
     }
   });
 
   app.addEventListener("change", (event) => {
-    if (event.target.dataset.process) {
-      const groupId = event.target.dataset.processGroup;
-      const group = processGroups.find((item) => item.id === groupId);
-      const processId = event.target.dataset.process;
+    if (event.target.dataset.option) {
+      const groupId = event.target.dataset.optionGroup;
+      const group = product().optionGroups?.find((item) => item.id === groupId);
+      const optionId = event.target.dataset.option;
+      if (!group) return;
       if (group.type === "single") {
-        state.selected[groupId] = [processId];
+        state.productOptions[groupId] = [optionId];
       } else if (event.target.checked) {
-        state.selected[groupId] = [...state.selected[groupId], processId];
+        state.productOptions[groupId] = [...(state.productOptions[groupId] || []), optionId];
       } else {
-        state.selected[groupId] = state.selected[groupId].filter((id) => id !== processId);
+        state.productOptions[groupId] = (state.productOptions[groupId] || []).filter((id) => id !== optionId);
       }
+      state.resultVisible = false;
       saveState();
       render();
     } else if (event.target.dataset.minimum) {

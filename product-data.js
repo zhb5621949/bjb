@@ -151,4 +151,63 @@
     { id: "glass-lettering", category: "other", name: "玻璃刻字", rate: 50, minimum: 50, tone: "silver", innerMaterial: "普通贴 / 反光贴", materialProcess: "刻字机", specs: [{ id: "custom", label: "小尺寸 / 定制", custom: true }] },
     { id: "copy-paper-print", category: "other", name: "打印纸打印", rate: 25, minimum: 40, tone: "ice", innerMaterial: "70 克打印纸", materialProcess: "打印机", specs: [{ id: "a4", label: "A4｜21 × 29.7 cm", length: 0.297, width: 0.21 }] },
   ];
+
+  const optionOverrides = {
+    "hard-ring-cookbook": {
+      shellMaterial: ["硬质外壳", "皮质外壳"],
+      innerMaterial: ["加厚 PVC 内页"],
+      shellProcess: ["雕刻", "彩印", "UV 打印"],
+      materialProcess: ["铜版纸包裹 PVC", "数码机器喷印"],
+    },
+    "deluxe-inner-nail-cookbook": {
+      shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
+    },
+    "deluxe-outer-nail-cookbook": {
+      shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
+    },
+    "butterfly-cookbook": {
+      shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
+      innerMaterial: ["加厚 PVC 内页", "250 克铜版纸内页"],
+    },
+  };
+
+  const groupDefinitions = [
+    { field: "shellMaterial", id: "shell-material", name: "外壳材料", type: "single" },
+    { field: "innerMaterial", id: "inner-material", name: "内页材料", type: "single" },
+    { field: "shellProcess", id: "shell-process", name: "外壳工艺", type: "multiple" },
+    { field: "materialProcess", id: "material-process", name: "内页/材料工艺", type: "multiple" },
+  ];
+
+  function choicesFromText(value) {
+    if (!value) return [];
+    if (value.startsWith("无外壳")) return [value];
+    return value
+      .replace(/[①②③④⑤]/g, "")
+      .split(/\s*[；/]\s*/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  window.PRODUCT_CATALOG.forEach((product) => {
+    const overrides = optionOverrides[product.id] || {};
+    product.optionGroups = groupDefinitions
+      .map((definition) => {
+        const choices = overrides[definition.field] || choicesFromText(product[definition.field]);
+        if (!choices.length) return null;
+        const displayName = definition.field === "innerMaterial" && product.category !== "cookbook" ? "材料" : definition.name;
+        const processName = definition.field === "materialProcess" && product.category !== "cookbook" ? "材料工艺" : displayName;
+        return {
+          id: definition.id,
+          name: processName,
+          type: definition.type,
+          items: choices.map((name, index) => ({
+            id: `${product.id}:${definition.id}:${index + 1}`,
+            name,
+            fee: 0,
+            unit: "sqm",
+          })),
+        };
+      })
+      .filter(Boolean);
+  });
 })();

@@ -9,7 +9,7 @@ GitHub 在线智能算价器 · 老板改价说明
    - category：所属大类（cookbook 菜谱、menu 菜单、other 其他）
    - rate：该品类每平方米单价
    - minimum：该品类默认最低价
-   - processFees：各项工艺加价
+   - optionFees：产品专用材料/工艺选项的每平方米加价；空白表示暂不加价
    - styleFeeDefault：默认每款费用
    - 产品规格、材料和工艺说明集中在 product-data.js；日常只改价格时不用动这个文件
 5. 把最上面的 version 数字加 1。
