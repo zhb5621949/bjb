@@ -1,7 +1,7 @@
 {
-  "version": 5,
-  "updatedAt": "2026-08-01T18:00:00+08:00",
-  "note": "菜谱类增加必填的内页数量，并写入报价结果与复制内容",
+  "version": 6,
+  "updatedAt": "2026-08-02T10:00:00+08:00",
+  "note": "菜谱类移除三折/四折页菜谱，新增可按内页数和菜谱本数计价的另加内页",
   "styleFeeDefault": 10,
   "categories": [
     { "id": "cookbook", "name": "菜谱" },
@@ -17,7 +17,7 @@
     { "id": "laminated-spiral-cookbook", "category": "cookbook", "name": "塑封线圈菜谱", "rate": 50, "minimum": 40, "tone": "cyan" },
     { "id": "saddle-album-cookbook", "category": "cookbook", "name": "骑马钉画册菜谱", "rate": 42, "minimum": 50, "tone": "coral" },
     { "id": "perfect-album-cookbook", "category": "cookbook", "name": "胶装画册菜谱", "rate": 48, "minimum": 50, "tone": "canvas" },
-    { "id": "folded-cookbook", "category": "cookbook", "name": "三折/四折页菜谱", "rate": 36, "minimum": 40, "tone": "sun" },
+    { "id": "additional-inner-pages", "category": "cookbook", "name": "另加内页", "rate": 38, "minimum": 40, "tone": "sand" },
 
     { "id": "laminated-menu", "category": "menu", "name": "塑封菜单", "rate": 45, "minimum": 40, "tone": "mint" },
     { "id": "pvc-menu", "category": "menu", "name": "PVC菜单", "rate": 68, "minimum": 50, "tone": "ice" },
