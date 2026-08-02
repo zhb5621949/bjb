@@ -354,7 +354,8 @@
 
     const currentProduct = product();
     const areaEach = length * width;
-    const totalArea = areaEach * quantity;
+    const pageMultiplier = currentProduct.multiplyByInnerPages ? innerPages : 1;
+    const totalArea = areaEach * quantity * pageMultiplier;
     const materialCost = totalArea * num(currentProduct.rate);
     const styleCost = styles * Math.max(0, num(state.styleFee));
     const selectedOptions = selectedProductOptions();
@@ -375,6 +376,7 @@
       quantity,
       styles,
       innerPages,
+      pageMultiplier,
       areaEach,
       totalArea,
       materialCost,
@@ -424,14 +426,15 @@
 
   function resultText(result) {
     const optionText = result.options.map((item) => `${item.groupName}：${item.name}`).join("；") || "未选择";
+    const quantityUnit = result.product.quantityUnit || "张";
     return [
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
       result.product.category === "cookbook" ? `内页数量：${result.innerPages}页` : "",
-      `数量：${result.quantity}张｜款数：${result.styles}款`,
+      `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
       `材料/工艺：${optionText}`,
-      `报价：${money(result.final)}（单张约 ${money(result.unit)}）`,
+      `报价：${money(result.final)}（每${quantityUnit}约 ${money(result.unit)}）`,
       result.floorApplied ? `已执行最低价：${money(result.floor)}` : "",
       "最终价格以确认文件、实际品类和生产要求为准。",
     ]
@@ -508,15 +511,17 @@
           <div class="floor-rule"><b>最低价保护</b><p>即使实际计算低于起步价，也会按您选择的 40 元、50 元或自定义最低价报价。</p></div>
         </aside>`;
     }
+    const quantityUnit = result.product.quantityUnit || "张";
     return `
       <aside class="result-panel ready">
         <div class="result-heading"><span>算价结果</span><small>${result.product.name}</small></div>
-        <div class="final-price"><small>建议对客报价</small><strong>${money(result.final)}</strong><span>约 ${money(result.unit)} / 张</span></div>
+        <div class="final-price"><small>建议对客报价</small><strong>${money(result.final)}</strong><span>约 ${money(result.unit)} / ${quantityUnit}</span></div>
         ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
           ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
           ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 页</dd></div>` : ""}
-          <div><dt>单张面积</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
+          <div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
+          ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
           <div><dt>品类基础费</dt><dd>${money(result.materialCost)}</dd></div>
           <div><dt>材料/工艺加价</dt><dd>${money(result.optionCost)}</dd></div>
@@ -525,7 +530,7 @@
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。</p>
+        <p class="calculation-note">${result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
   }
 
@@ -571,6 +576,7 @@
 
   function calculatorView() {
     const currentProduct = product();
+    const isAdditionalInnerPages = Boolean(currentProduct.multiplyByInnerPages);
     latestResult = state.resultVisible ? calculate() : null;
     return `
       <section class="calculator-layout">
@@ -579,9 +585,9 @@
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
-          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页数量</div><div class="inner-page-input"><label><span>内页数量</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="请输入数量"><i>页</i></label><small>菜谱类必填；当前仅记录在报价单中，暂不增加费用</small></div></div>` : ""}
+          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页数量</div><div class="inner-page-input"><label><span>内页数量</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="请输入数量"><i>页</i></label><small>${isAdditionalInnerPages ? "另加内页按单页面积 × 内页数量 × 菜谱本数量计价" : "菜谱类必填；当前仅记录在报价单中，暂不增加费用"}</small></div></div>` : ""}
           ${productOptionRows()}
-          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>总数量（张）</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
+          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${isAdditionalInnerPages ? "菜谱本数量（本）" : "总数量（张）"}</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
             <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随品类</b><small>${money(currentProduct.minimum)}</small></label>
             <label class="${state.minimumMode === "40" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="40" ${state.minimumMode === "40" ? "checked" : ""}><b>最低 40 元</b></label>

@@ -86,16 +86,12 @@
       specs: albumSpecs,
     },
     {
-      id: "folded-cookbook", category: "cookbook", name: "三折/四折页菜谱", rate: 36, minimum: 40, tone: "sun",
-      shellMaterial: "无外壳；封面和内页为 300 克铜版纸覆亮膜",
-      innerMaterial: "300 克铜版纸覆亮膜",
-      shellProcess: "无外壳",
-      materialProcess: "数码印刷",
-      specs: [
-        { id: "a4", label: "A4｜20 × 28.5 cm左右", length: 0.285, width: 0.2 },
-        { id: "a3", label: "A3｜28 × 42 cm左右", length: 0.42, width: 0.28 },
-        { id: "custom", label: "定制｜铺开不超过 30 × 86 cm", custom: true },
-      ],
+      id: "additional-inner-pages", category: "cookbook", name: "另加内页", rate: 38, minimum: 40, tone: "sand",
+      innerMaterial: "① 加厚 PVC 内页；② 250 克铜版纸内页",
+      materialProcess: "数码机器喷印",
+      specs: aSeriesBook,
+      multiplyByInnerPages: true,
+      quantityUnit: "本",
     },
 
     { id: "laminated-menu", category: "menu", name: "塑封菜单", rate: 45, minimum: 40, tone: "mint", innerMaterial: "250 克铜版纸", materialProcess: "数码机器印刷", specs: [
