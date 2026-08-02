@@ -87,8 +87,8 @@
     },
     {
       id: "additional-inner-pages", category: "cookbook", name: "另加内页", rate: 38, minimum: 40, tone: "sand",
-      innerMaterial: "① 加厚 PVC 内页；② 250 克铜版纸内页",
-      materialProcess: "数码机器喷印",
+      innerMaterial: "① 加厚 PVC 内页；② 250 克铜版纸内页；③ 300 克铜版纸内页",
+      materialProcess: "① 双面亮膜；② 双面哑膜",
       specs: aSeriesBook,
       multiplyByInnerPages: true,
       quantityUnit: "本",
@@ -171,7 +171,7 @@
     { field: "shellMaterial", id: "shell-material", name: "外壳材料", type: "single" },
     { field: "innerMaterial", id: "inner-material", name: "内页材料", type: "single" },
     { field: "shellProcess", id: "shell-process", name: "外壳工艺", type: "multiple" },
-    { field: "materialProcess", id: "material-process", name: "内页/材料工艺", type: "multiple" },
+    { field: "materialProcess", id: "material-process", name: "内页工艺", type: "multiple" },
   ];
 
   function choicesFromText(value) {
