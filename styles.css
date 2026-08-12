@@ -159,6 +159,13 @@ button {
   color: #d6bd52;
 }
 
+.top-actions .admin-button {
+  color: #26210d;
+  background: var(--yellow);
+  border-color: var(--yellow-deep);
+  font-weight: 800;
+}
+
 .offline-badge {
   padding: 6px 9px;
   color: #83dfbd;
@@ -1210,7 +1217,7 @@ button {
 }
 
 .settings-modal {
-  width: min(780px, 96vw);
+  width: min(920px, 96vw);
   max-height: 88vh;
   display: flex;
   flex-direction: column;
@@ -1251,6 +1258,112 @@ button {
   border-radius: 50%;
   cursor: pointer;
   font-size: 20px;
+}
+
+.admin-auth {
+  padding: 14px 20px;
+  background: #fffbea;
+  border-bottom: 1px solid #eadb8b;
+}
+
+.admin-steps {
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 9px;
+}
+
+.admin-steps b {
+  margin-right: 4px;
+  font-size: 10px;
+}
+
+.admin-steps span {
+  padding: 4px 7px;
+  background: white;
+  border: 1px solid #eadb8b;
+  border-radius: 4px;
+}
+
+.admin-auth label {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-auth label span {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.admin-auth input,
+.admin-defaults input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid #c8b65e;
+  border-radius: 4px;
+  outline: none;
+}
+
+.admin-auth input:focus,
+.admin-defaults input:focus {
+  border-color: #8d730e;
+  box-shadow: 0 0 0 3px rgba(255, 217, 40, 0.2);
+}
+
+.admin-auth p a {
+  margin-left: 6px;
+  color: #675000;
+  font-weight: 800;
+}
+
+.admin-defaults {
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.admin-defaults label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.admin-defaults input {
+  width: 100px;
+}
+
+.admin-defaults i,
+.admin-defaults small {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.admin-status {
+  min-height: 34px;
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  color: #77561b;
+  background: #fff8dc;
+  border-top: 1px solid #f0e0a4;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.admin-status.success {
+  color: #1f6b3a;
+  background: #eefaf2;
+  border-color: #bfe3ca;
 }
 
 .settings-table {
@@ -1328,6 +1441,11 @@ button {
   cursor: pointer;
 }
 
+.settings-modal footer button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 .text-button {
   color: #7b4b42;
   background: transparent;
@@ -1388,6 +1506,29 @@ button {
   .offline-badge,
   .tabs > span {
     display: none;
+  }
+
+  .top-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-backdrop {
+    padding: 10px;
+  }
+
+  .settings-modal {
+    width: 100%;
+    max-height: 94vh;
+  }
+
+  .admin-auth label {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .admin-defaults {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .calculator-layout {
@@ -1469,7 +1610,7 @@ button {
   }
 
   .settings-row {
-    grid-template-columns: 1fr 95px 95px;
+    grid-template-columns: minmax(130px, 1fr) 82px 82px;
   }
 }
 

@@ -4,8 +4,13 @@
   const sourceCatalog = window.OFFLINE_CATALOG || { groups: [] };
   const STORAGE_KEY = "print-calculator-github-client-v1";
   const SETTINGS_KEY = "print-calculator-github-pricing-v1";
+  const GITHUB_PRICING_API = "https://api.github.com/repos/zhb5621949/bjb/contents/data/pricing.json";
   const hadSavedState = Boolean(localStorage.getItem(STORAGE_KEY));
   let deferredInstallPrompt = null;
+  let adminToken = "";
+  let adminDraft = null;
+  let adminStatus = "";
+  let adminBusy = false;
 
   const productCategories = [
     { id: "cookbook", name: "菜谱", description: "装订菜谱、画册与内页" },
@@ -231,6 +236,99 @@
 
   function saveSettings() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  function createAdminDraft() {
+    return {
+      products: settings.products.map((item) => ({ id: item.id, rate: num(item.rate), minimum: num(item.minimum, 40) })),
+      styleFeeDefault: num(settings.styleFeeDefault, 10),
+    };
+  }
+
+  function utf8ToBase64(value) {
+    const bytes = new TextEncoder().encode(value);
+    let binary = "";
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    return btoa(binary);
+  }
+
+  function base64ToUtf8(value) {
+    const binary = atob(String(value || "").replace(/\s/g, ""));
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+
+  async function publishAdminPricing() {
+    const token = adminToken.trim();
+    if (!token) {
+      adminStatus = "请先填写老板的 GitHub 授权令牌";
+      render();
+      return;
+    }
+    if (!adminDraft) return;
+
+    adminBusy = true;
+    adminStatus = "正在读取线上价格…";
+    render();
+    const headers = {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+    };
+    try {
+      const currentResponse = await fetch(`${GITHUB_PRICING_API}?ref=main&t=${Date.now()}`, { headers, cache: "no-store" });
+      if (!currentResponse.ok) throw new Error(currentResponse.status === 401 || currentResponse.status === 403 ? "授权失败，请检查令牌是否有本仓库 Contents 读写权限" : "无法读取 GitHub 价格文件");
+      const currentFile = await currentResponse.json();
+      const remote = JSON.parse(base64ToUtf8(currentFile.content));
+      const draftMap = Object.fromEntries(adminDraft.products.map((item) => [item.id, item]));
+      const nextVersion = Math.max(num(remote.version), num(settings.version)) + 1;
+      const nextPricing = {
+        ...remote,
+        version: nextVersion,
+        updatedAt: new Date().toISOString(),
+        note: "老板通过内置管理端更新价格",
+        styleFeeDefault: Math.max(0, num(adminDraft.styleFeeDefault)),
+        products: (remote.products || []).map((item) => ({
+          ...item,
+          rate: Math.max(0, num(draftMap[item.id]?.rate, item.rate)),
+          minimum: Math.max(0, num(draftMap[item.id]?.minimum, item.minimum)),
+        })),
+      };
+      adminStatus = "正在发布到客服端…";
+      render();
+      const updateResponse = await fetch(GITHUB_PRICING_API, {
+        method: "PUT",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: `老板管理端更新价格 V${nextVersion}`,
+          content: utf8ToBase64(`${JSON.stringify(nextPricing, null, 2)}\n`),
+          sha: currentFile.sha,
+          branch: "main",
+        }),
+      });
+      if (!updateResponse.ok) throw new Error(updateResponse.status === 401 || updateResponse.status === 403 ? "发布失败，请检查令牌的仓库写入权限" : "GitHub 发布失败，请稍后重试");
+
+      const nextMap = Object.fromEntries(nextPricing.products.map((item) => [item.id, item]));
+      settings = {
+        ...settings,
+        products: settings.products.map((item) => ({ ...item, ...(nextMap[item.id] || {}) })),
+        version: nextPricing.version,
+        updatedAt: nextPricing.updatedAt,
+        styleFeeDefault: nextPricing.styleFeeDefault,
+      };
+      syncInfo = { status: "online", version: nextPricing.version, updatedAt: nextPricing.updatedAt };
+      saveSettings();
+      adminToken = "";
+      adminDraft = createAdminDraft();
+      adminStatus = `发布成功：价格 V${nextVersion}，客服端通常在 1 分钟内自动更新`;
+    } catch (error) {
+      adminStatus = error?.message || "发布失败，请稍后重试";
+    } finally {
+      adminBusy = false;
+      render();
+    }
   }
 
   function pricingFingerprint(value) {
@@ -557,19 +655,27 @@
 
   function settingsModal() {
     if (!state.settingsOpen) return "";
+    const draftMap = Object.fromEntries((adminDraft?.products || []).map((item) => [item.id, item]));
     return `
       <div class="modal-backdrop" data-action="close-settings">
         <section class="settings-modal" data-modal>
-          <header><div><span class="eyebrow">本地报价规则</span><h2>品类价格设置</h2><p>修改后只保存在这台电脑。品类单价按每平方米计。</p></div><button data-action="close-settings">×</button></header>
+          <header><div><span class="eyebrow">老板专用</span><h2>报价管理端</h2><p>修改后直接发布到 GitHub，所有客服端自动同步。品类单价按每平方米计。</p></div><button class="modal-close" data-action="close-settings" aria-label="关闭管理端">×</button></header>
+          <div class="admin-auth">
+            <div class="admin-steps"><b>使用方法</b><span>1. 填写授权令牌</span><span>2. 修改价格</span><span>3. 点击发布全部价格</span></div>
+            <label><span>GitHub 授权令牌</span><input type="password" data-admin-token value="${attr(adminToken)}" autocomplete="off" spellcheck="false" placeholder="只在本次页面中使用，刷新后自动清除"></label>
+            <p>令牌必须属于老板账号，并仅授予 <b>zhb5621949/bjb</b> 仓库的 Contents 读写权限。<a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">创建授权令牌</a></p>
+          </div>
+          <div class="admin-defaults"><label><span>默认设计/开机费</span><input type="number" min="0" step="1" data-admin-setting="styleFeeDefault" value="${attr(adminDraft?.styleFeeDefault ?? settings.styleFeeDefault)}"><i>元/款</i></label><small>当前线上版本：V${settings.version || "-"}</small></div>
           <div class="settings-table">
             <div class="settings-row settings-title"><span>具体品类</span><span>单价（元/㎡）</span><span>默认最低价</span></div>
             ${settings.products
               .map(
-                (item) => `<div class="settings-row"><strong>${escapeHtml(productCategories.find((category) => category.id === item.category)?.name || "其他")} · ${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-setting="rate" data-product-id="${attr(item.id)}" value="${attr(item.rate)}"><select data-setting="minimum" data-product-id="${attr(item.id)}"><option value="40" ${item.minimum === 40 ? "selected" : ""}>40 元</option><option value="50" ${item.minimum === 50 ? "selected" : ""}>50 元</option></select></div>`,
+                (item) => `<div class="settings-row"><strong>${escapeHtml(productCategories.find((category) => category.id === item.category)?.name || "其他")} · ${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-admin-setting="rate" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.rate ?? item.rate)}"><input type="number" min="0" step="1" data-admin-setting="minimum" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.minimum ?? item.minimum)}"></div>`,
               )
               .join("")}
           </div>
-          <footer><button class="text-button" data-action="reset-settings">恢复默认价格</button><button class="primary" data-action="save-settings">保存设置</button></footer>
+          <div class="admin-status ${adminStatus.includes("成功") ? "success" : ""}" aria-live="polite">${escapeHtml(adminStatus || "价格发布后，客服无需重新安装软件。")}</div>
+          <footer><button class="text-button" data-action="reset-settings" ${adminBusy ? "disabled" : ""}>恢复初始价格</button><button class="primary" data-action="publish-settings" ${adminBusy ? "disabled" : ""}>${adminBusy ? "正在发布…" : "发布全部价格"}</button></footer>
         </section>
       </div>`;
   }
@@ -612,10 +718,11 @@
         ${state.toast ? `<div class="toast">${escapeHtml(state.toast)}</div>` : ""}
         <header class="topbar">
           <div class="brand"><span class="brand-mark">¥</span><div><strong>写真广告 · 智能算价器</strong><small>GitHub 在线版｜老板改价后客服自动同步</small></div></div>
-          <div class="top-actions"><span class="sync-badge ${syncInfo.status}">${syncLabel}</span><button data-action="refresh-pricing">刷新价格</button><button class="${deferredInstallPrompt ? "" : "install-unavailable"}" data-action="install-app">安装到桌面</button><button data-action="reset-form">清空参数</button></div>
+          <div class="top-actions"><span class="sync-badge ${syncInfo.status}">${syncLabel}</span><button class="admin-button" data-action="open-settings">老板管理</button><button data-action="refresh-pricing">刷新价格</button><button class="${deferredInstallPrompt ? "" : "install-unavailable"}" data-action="install-app">安装到桌面</button><button data-action="reset-form">清空参数</button></div>
         </header>
         <nav class="tabs"><button class="${state.tab === "calculator" ? "active" : ""}" data-action="tab" data-tab="calculator">智能算价</button><button class="${state.tab === "reference" ? "active" : ""}" data-action="tab" data-tab="reference">原表参考</button><span>产品规格已融合｜价格 V${syncInfo.version || 3}</span></nav>
         ${state.tab === "calculator" ? calculatorView() : referenceView()}
+        ${settingsModal()}
       </main>`;
   }
 
@@ -623,7 +730,26 @@
     const target = event.target.closest("[data-action]");
     if (!target) return;
     const action = target.dataset.action;
-    if (action === "category") {
+    if (action === "close-settings" && target.classList.contains("modal-backdrop") && event.target.closest("[data-modal]")) return;
+    if (action === "open-settings") {
+      adminDraft = createAdminDraft();
+      adminStatus = "";
+      state.settingsOpen = true;
+    } else if (action === "close-settings") {
+      state.settingsOpen = false;
+      adminToken = "";
+      adminDraft = null;
+      adminStatus = "";
+    } else if (action === "reset-settings") {
+      adminDraft = {
+        products: defaultProducts.map((item) => ({ id: item.id, rate: num(item.rate), minimum: num(item.minimum, 40) })),
+        styleFeeDefault: 10,
+      };
+      adminStatus = "已恢复初始价格，点击“发布全部价格”后才会生效";
+    } else if (action === "publish-settings") {
+      publishAdminPricing();
+      return;
+    } else if (action === "category") {
       state.categoryId = target.dataset.id;
       selectProduct(settings.products.find((item) => item.category === state.categoryId)?.id || settings.products[0].id);
     } else if (action === "product") {
@@ -686,6 +812,20 @@
   });
 
   app.addEventListener("input", (event) => {
+    if (event.target.dataset.adminToken !== undefined) {
+      adminToken = event.target.value;
+      return;
+    }
+    const adminSetting = event.target.dataset.adminSetting;
+    if (adminSetting && adminDraft) {
+      if (adminSetting === "styleFeeDefault") {
+        adminDraft.styleFeeDefault = num(event.target.value);
+      } else {
+        const item = adminDraft.products.find((entry) => entry.id === event.target.dataset.productId);
+        if (item) item[adminSetting] = num(event.target.value);
+      }
+      return;
+    }
     const field = event.target.dataset.field;
     if (field) {
       const map = {
