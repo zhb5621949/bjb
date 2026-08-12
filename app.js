@@ -590,13 +590,14 @@
   function resultText(result) {
     const optionText = result.options.map((item) => `${item.groupName}：${item.name}`).join("；") || "未选择";
     const quantityUnit = result.product.quantityUnit || "张";
+    const isCookbook = result.product.category === "cookbook";
     return [
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
       result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
-      result.sourcePricing ? `原表最高价：${result.sourcePricing.formula}` : "",
+      result.sourcePricing && !isCookbook ? `原表最高价：${result.sourcePricing.formula}` : "",
       result.sourcePricing && result.priceFactor !== 100 ? `品类调价系数：${result.priceFactor}%` : "",
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
@@ -680,20 +681,21 @@
         </aside>`;
     }
     const quantityUnit = result.product.quantityUnit || "张";
+    const isCookbook = result.product.category === "cookbook";
     return `
       <aside class="result-panel ready">
         <div class="result-heading"><span>算价结果</span><small>${result.product.name}</small></div>
         <div class="final-price"><small>建议对客报价</small><strong>${money(result.final)}</strong><span>约 ${money(result.unit)} / ${quantityUnit}</span></div>
-        ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
+        ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : isCookbook ? "" : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
           ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
-          ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张（${result.innerPages * 2} 页）</dd></div>` : ""}
-          <div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
+          ${isCookbook ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张（${result.innerPages * 2} 页）</dd></div>` : ""}
+          ${!isCookbook ? `<div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
-          ${result.sourcePricing ? `<div><dt>原表最高价规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div><div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
-          <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
+          ${result.sourcePricing ? `${!isCookbook ? `<div><dt>原表最高价规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
+          ${!isCookbook ? `<div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.tierUnitPrice !== null ? `<div><dt>每本阶梯单价</dt><dd>${money(result.tierUnitPrice)} × ${result.quantity} 本</dd></div>` : ""}
-          <div><dt>${result.tierUnitPrice !== null ? "菜谱本基础费" : "品类基础费"}</dt><dd>${money(result.materialCost)}</dd></div>
+          ${!isCookbook ? `<div><dt>${result.tierUnitPrice !== null ? "菜谱本基础费" : "品类基础费"}</dt><dd>${money(result.materialCost)}</dd></div>` : ""}
           ${result.tierUnitPrice !== null ? `<div><dt>包含内页</dt><dd>${result.includedInnerPages} 张及以下</dd></div>` : ""}
           ${result.extraInnerPages ? `<div><dt>另加内页</dt><dd>${result.extraInnerPages} 张 × ${result.quantity} 本 × ${money(result.product.bookPricing.extraInnerPagePrice)} = ${money(result.extraInnerPageCost)}</dd></div>` : ""}
           <div><dt>材料/工艺加价</dt><dd>${money(result.optionCost)}</dd></div>
@@ -702,7 +704,7 @@
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">${result.sourcePricing ? `计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
+        <p class="calculation-note">${isCookbook ? "报价按所选规格、内页张数和本数计算，最终价格以确认文件和生产要求为准。" : result.sourcePricing ? `计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
   }
 
