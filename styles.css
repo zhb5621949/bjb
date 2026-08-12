@@ -649,6 +649,17 @@ button {
   transform: translateY(-50%);
 }
 
+.page-conversion {
+  min-width: 82px;
+  padding: 8px 11px;
+  color: #3f4b55;
+  background: #f1f6fa;
+  border: 1px solid #cbd8e2;
+  border-radius: 5px;
+  font-size: 11px;
+  text-align: center;
+}
+
 .inner-page-input > small {
   color: #8d730e;
   font-size: 9px;

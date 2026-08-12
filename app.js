@@ -555,7 +555,7 @@
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
-      result.product.category === "cookbook" ? `内页数量：${result.innerPages}页` : "",
+      result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
@@ -645,7 +645,7 @@
         ${result.floorApplied ? `<div class="floor-hit"><b>已触发最低价</b><span>计算价 ${money(result.raw)}，按最低 ${money(result.floor)} 报价</span></div>` : `<div class="floor-pass"><b>未触发最低价</b><span>计算价已高于 ${money(result.floor)}</span></div>`}
         <dl class="breakdown">
           ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
-          ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张</dd></div>` : ""}
+          ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张（${result.innerPages * 2} 页）</dd></div>` : ""}
           <div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
@@ -731,7 +731,7 @@
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
-          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页数量</div><div class="inner-page-input"><label><span>内页数量</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="请输入数量"><i>张</i></label><small>${isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单页面积 × 内页数量 × 菜谱本数量计价" : "菜谱类必填；当前仅记录在报价单中，暂不增加费用"}</small></div></div>` : ""}
+          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页张数</div><div class="inner-page-input"><label><span>多少张内页</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="例如 8"><i>张</i></label><strong class="page-conversion">${Math.max(0, Math.floor(num(state.innerPages))) ? `＝ ${Math.floor(num(state.innerPages)) * 2} 页` : "1 张＝2 页"}</strong><small>${isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张（${currentProduct.bookPricing.includedInnerPages * 2} 页）内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单张面积 × 内页张数 × 菜谱本数量计价；页面数仅作显示" : "请输入实际纸张张数，系统自动换算页面数"}</small></div></div>` : ""}
           ${productOptionRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${isAdditionalInnerPages || isBookTierPricing ? "菜谱本数量（本）" : "总数量（张）"}</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
@@ -809,7 +809,7 @@
       }
     } else if (action === "calculate") {
       if (product().category === "cookbook" && Math.floor(num(state.innerPages)) < 1) {
-        notify("请先输入内页数量");
+        notify("请先输入内页张数");
         return;
       }
       latestResult = calculate();
@@ -907,6 +907,12 @@
           const input = app.querySelector(`[data-field="${field}"]`);
           input?.focus();
         });
+      } else if (field === "inner-pages") {
+        const conversion = app.querySelector(".page-conversion");
+        if (conversion) {
+          const sheets = Math.max(0, Math.floor(num(state.innerPages)));
+          conversion.textContent = sheets ? `＝ ${sheets * 2} 页` : "1 张＝2 页";
+        }
       } else if (field === "length" || field === "width") {
         state.specId = "";
         saveState();
