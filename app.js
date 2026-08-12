@@ -139,7 +139,9 @@
     return Object.fromEntries(
       (selectedProduct.optionGroups || []).map((group) => [
         group.id,
-        group.type === "single" && group.items[0] ? [group.items[0].id] : [],
+        group.type === "single" && group.items[0]
+          ? [group.items[0].id]
+          : group.items.filter((item) => item.checked).map((item) => item.id),
       ]),
     );
   }
@@ -151,7 +153,7 @@
       (selectedProduct.optionGroups || []).map((group) => {
         const validIds = new Set(group.items.map((item) => item.id));
         const savedIds = Array.isArray(savedOptions[group.id]) ? savedOptions[group.id].filter((id) => validIds.has(id)) : [];
-        return [group.id, group.type === "single" ? (savedIds.length ? [savedIds[0]] : defaults[group.id]) : savedIds];
+        return [group.id, group.type === "single" ? (savedIds.length ? [savedIds[0]] : defaults[group.id]) : (savedIds.length ? savedIds : defaults[group.id])];
       }),
     );
   }

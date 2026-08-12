@@ -1,7 +1,7 @@
 {
-  "version": 8,
-  "updatedAt": "2026-08-12T10:00:00+08:00",
-  "note": "增加老板管理端，可在线修改品类单价、最低价和默认开机费并发布到客服端",
+  "version": 9,
+  "updatedAt": "2026-08-12T11:30:00+08:00",
+  "note": "塑封菜单增加12丝过塑膜塑封，菜单类印刷工艺默认勾选",
   "styleFeeDefault": 10,
   "categories": [
     { "id": "cookbook", "name": "菜谱" },

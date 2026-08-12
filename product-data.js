@@ -94,7 +94,7 @@
       quantityUnit: "本",
     },
 
-    { id: "laminated-menu", category: "menu", name: "塑封菜单", rate: 45, minimum: 40, tone: "mint", innerMaterial: "250 克铜版纸", materialProcess: "数码机器印刷", specs: [
+    { id: "laminated-menu", category: "menu", name: "塑封菜单", rate: 45, minimum: 40, tone: "mint", innerMaterial: "250 克铜版纸 + 12 丝过塑膜塑封", materialProcess: "印刷", specs: [
       { id: "a4", label: "A4｜21 × 29.7 cm", length: 0.297, width: 0.21 }, { id: "a3", label: "A3｜29.7 × 42 cm", length: 0.42, width: 0.297 },
     ] },
     { id: "pvc-menu", category: "menu", name: "PVC菜单", rate: 68, minimum: 50, tone: "ice", innerMaterial: "1 毫米厚度 PVC", materialProcess: "数码机器印刷", specs: [
@@ -188,7 +188,8 @@
     const overrides = optionOverrides[product.id] || {};
     product.optionGroups = groupDefinitions
       .map((definition) => {
-        const choices = overrides[definition.field] || choicesFromText(product[definition.field]);
+        const menuPrinting = product.category === "menu" && definition.field === "materialProcess";
+        const choices = menuPrinting ? ["印刷"] : (overrides[definition.field] || choicesFromText(product[definition.field]));
         if (!choices.length) return null;
         const displayName = definition.field === "innerMaterial" && product.category !== "cookbook" ? "材料" : definition.name;
         const processName = definition.field === "materialProcess" && product.category !== "cookbook" ? "材料工艺" : displayName;
@@ -201,6 +202,7 @@
             name,
             fee: 0,
             unit: "sqm",
+            checked: menuPrinting,
           })),
         };
       })
