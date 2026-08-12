@@ -1,12 +1,21 @@
 {
-  "version": 11,
-  "updatedAt": "2026-08-12T14:30:00+08:00",
-  "note": "菜谱类内页按张输入并自动换算页面数，1张等于2页",
+  "version": 12,
+  "updatedAt": "2026-08-12T18:00:00+08:00",
+  "note": "所有产品按原报价表价格区间的最高价计算；管理端可按品类调整原表价系数",
   "styleFeeDefault": 10,
   "categories": [
-    { "id": "cookbook", "name": "菜谱" },
-    { "id": "menu", "name": "菜单" },
-    { "id": "other", "name": "其他" }
+    {
+      "id": "cookbook",
+      "name": "菜谱"
+    },
+    {
+      "id": "menu",
+      "name": "菜单"
+    },
+    {
+      "id": "other",
+      "name": "其他"
+    }
   ],
   "products": [
     {
@@ -16,55 +25,349 @@
       "rate": 150,
       "minimum": 150,
       "tone": "ink",
-      "pricingMode": "perBookTier",
+      "pricingMode": "originalHighest",
       "quantityUnit": "本",
       "bookPricing": {
         "includedInnerPages": 8,
         "extraInnerPagePrice": 10,
         "specs": {
-          "a4": { "one": 260, "two": 180, "threeToFour": 160, "fivePlus": 150 },
-          "large": { "one": 280, "two": 230, "threeToFour": 200, "fivePlus": 180 },
-          "a3": { "one": 280, "two": 230, "threeToFour": 200, "fivePlus": 180 }
+          "a4": {
+            "one": 260,
+            "two": 180,
+            "threeToFour": 160,
+            "fivePlus": 150
+          },
+          "large": {
+            "one": 280,
+            "two": 230,
+            "threeToFour": 200,
+            "fivePlus": 180
+          },
+          "a3": {
+            "one": 280,
+            "two": 230,
+            "threeToFour": 200,
+            "fivePlus": 180
+          }
         }
-      }
+      },
+      "priceFactor": 100
     },
-    { "id": "deluxe-inner-nail-cookbook", "category": "cookbook", "name": "精装内钉菜谱", "rate": 48, "minimum": 50, "tone": "steel" },
-    { "id": "deluxe-outer-nail-cookbook", "category": "cookbook", "name": "精装外钉菜谱", "rate": 48, "minimum": 50, "tone": "gold" },
-    { "id": "butterfly-cookbook", "category": "cookbook", "name": "蝴蝶装菜谱", "rate": 68, "minimum": 50, "tone": "violet" },
-    { "id": "spiral-cookbook", "category": "cookbook", "name": "线圈装菜谱本", "rate": 55, "minimum": 50, "tone": "blue" },
-    { "id": "laminated-spiral-cookbook", "category": "cookbook", "name": "塑封线圈菜谱", "rate": 50, "minimum": 40, "tone": "cyan" },
-    { "id": "saddle-album-cookbook", "category": "cookbook", "name": "骑马钉画册菜谱", "rate": 42, "minimum": 50, "tone": "coral" },
-    { "id": "perfect-album-cookbook", "category": "cookbook", "name": "胶装画册菜谱", "rate": 48, "minimum": 50, "tone": "canvas" },
-    { "id": "additional-inner-pages", "category": "cookbook", "name": "另加内页", "rate": 38, "minimum": 40, "tone": "sand" },
-
-    { "id": "laminated-menu", "category": "menu", "name": "塑封菜单", "rate": 45, "minimum": 40, "tone": "mint" },
-    { "id": "pvc-menu", "category": "menu", "name": "PVC菜单", "rate": 68, "minimum": 50, "tone": "ice" },
-    { "id": "photo-menu", "category": "menu", "name": "写真菜单", "rate": 38, "minimum": 40, "tone": "rose" },
-    { "id": "photo-paper-menu", "category": "menu", "name": "相纸菜单", "rate": 38, "minimum": 40, "tone": "blue" },
-    { "id": "checklist-menu", "category": "menu", "name": "勾选菜单", "rate": 35, "minimum": 40, "tone": "lime" },
-    { "id": "multipart-form", "category": "menu", "name": "联单", "rate": 32, "minimum": 40, "tone": "steel" },
-    { "id": "indoor-light-film-menu", "category": "menu", "name": "室内灯片菜单", "rate": 45, "minimum": 50, "tone": "amber" },
-    { "id": "takeaway-card", "category": "menu", "name": "外卖卡", "rate": 32, "minimum": 40, "tone": "coral" },
-    { "id": "voucher", "category": "menu", "name": "代金券", "rate": 32, "minimum": 40, "tone": "violet" },
-    { "id": "table-sign-menu", "category": "menu", "name": "台签菜单", "rate": 55, "minimum": 50, "tone": "gold" },
-    { "id": "banner-menu", "category": "menu", "name": "喷绘布菜单", "rate": 35, "minimum": 40, "tone": "red" },
-    { "id": "kt-board-menu", "category": "menu", "name": "KT板菜单", "rate": 55, "minimum": 50, "tone": "pearl" },
-
-    { "id": "backlit-fabric", "category": "other", "name": "卡布灯箱布", "rate": 58, "minimum": 50, "tone": "canvas2" },
-    { "id": "stretch-lightbox-fabric", "category": "other", "name": "拉布灯箱布", "rate": 58, "minimum": 50, "tone": "canvas" },
-    { "id": "canvas", "category": "other", "name": "油画布", "rate": 55, "minimum": 50, "tone": "oil" },
-    { "id": "business-card", "category": "other", "name": "名片", "rate": 35, "minimum": 40, "tone": "ink" },
-    { "id": "flyer", "category": "other", "name": "宣传单", "rate": 32, "minimum": 40, "tone": "sand" },
-    { "id": "kt-board-poster", "category": "other", "name": "KT板海报", "rate": 55, "minimum": 50, "tone": "pearl" },
-    { "id": "sticker-poster", "category": "other", "name": "不干胶海报", "rate": 42, "minimum": 40, "tone": "cyan" },
-    { "id": "photo-poster", "category": "other", "name": "写真海报", "rate": 36, "minimum": 40, "tone": "rose" },
-    { "id": "banner", "category": "other", "name": "喷绘布", "rate": 35, "minimum": 40, "tone": "red" },
-    { "id": "indoor-light-film", "category": "other", "name": "室内灯片", "rate": 45, "minimum": 50, "tone": "sun" },
-    { "id": "static-cling", "category": "other", "name": "静电贴", "rate": 40, "minimum": 40, "tone": "mint" },
-    { "id": "one-way-vision", "category": "other", "name": "单透贴", "rate": 48, "minimum": 50, "tone": "smoke" },
-    { "id": "car-sticker", "category": "other", "name": "车贴", "rate": 46, "minimum": 50, "tone": "blue" },
-    { "id": "glass-lettering", "category": "other", "name": "玻璃刻字", "rate": 50, "minimum": 50, "tone": "silver" },
-    { "id": "copy-paper-print", "category": "other", "name": "打印纸打印", "rate": 25, "minimum": 40, "tone": "ice" }
+    {
+      "id": "deluxe-inner-nail-cookbook",
+      "category": "cookbook",
+      "name": "精装内钉菜谱",
+      "rate": 48,
+      "minimum": 50,
+      "tone": "steel",
+      "priceFactor": 100
+    },
+    {
+      "id": "deluxe-outer-nail-cookbook",
+      "category": "cookbook",
+      "name": "精装外钉菜谱",
+      "rate": 48,
+      "minimum": 50,
+      "tone": "gold",
+      "priceFactor": 100
+    },
+    {
+      "id": "butterfly-cookbook",
+      "category": "cookbook",
+      "name": "蝴蝶装菜谱",
+      "rate": 68,
+      "minimum": 50,
+      "tone": "violet",
+      "priceFactor": 100
+    },
+    {
+      "id": "spiral-cookbook",
+      "category": "cookbook",
+      "name": "线圈装菜谱本",
+      "rate": 55,
+      "minimum": 50,
+      "tone": "blue",
+      "priceFactor": 100
+    },
+    {
+      "id": "laminated-spiral-cookbook",
+      "category": "cookbook",
+      "name": "塑封线圈菜谱",
+      "rate": 50,
+      "minimum": 40,
+      "tone": "cyan",
+      "priceFactor": 100
+    },
+    {
+      "id": "saddle-album-cookbook",
+      "category": "cookbook",
+      "name": "骑马钉画册菜谱",
+      "rate": 42,
+      "minimum": 50,
+      "tone": "coral",
+      "priceFactor": 100
+    },
+    {
+      "id": "perfect-album-cookbook",
+      "category": "cookbook",
+      "name": "胶装画册菜谱",
+      "rate": 48,
+      "minimum": 50,
+      "tone": "canvas",
+      "priceFactor": 100
+    },
+    {
+      "id": "additional-inner-pages",
+      "category": "cookbook",
+      "name": "另加内页",
+      "rate": 38,
+      "minimum": 40,
+      "tone": "sand",
+      "priceFactor": 100
+    },
+    {
+      "id": "laminated-menu",
+      "category": "menu",
+      "name": "塑封菜单",
+      "rate": 45,
+      "minimum": 40,
+      "tone": "mint",
+      "priceFactor": 100
+    },
+    {
+      "id": "pvc-menu",
+      "category": "menu",
+      "name": "PVC菜单",
+      "rate": 68,
+      "minimum": 50,
+      "tone": "ice",
+      "priceFactor": 100
+    },
+    {
+      "id": "photo-menu",
+      "category": "menu",
+      "name": "写真菜单",
+      "rate": 38,
+      "minimum": 40,
+      "tone": "rose",
+      "priceFactor": 100
+    },
+    {
+      "id": "photo-paper-menu",
+      "category": "menu",
+      "name": "相纸菜单",
+      "rate": 38,
+      "minimum": 40,
+      "tone": "blue",
+      "priceFactor": 100
+    },
+    {
+      "id": "checklist-menu",
+      "category": "menu",
+      "name": "勾选菜单",
+      "rate": 35,
+      "minimum": 40,
+      "tone": "lime",
+      "priceFactor": 100
+    },
+    {
+      "id": "multipart-form",
+      "category": "menu",
+      "name": "联单",
+      "rate": 32,
+      "minimum": 40,
+      "tone": "steel",
+      "priceFactor": 100
+    },
+    {
+      "id": "indoor-light-film-menu",
+      "category": "menu",
+      "name": "室内灯片菜单",
+      "rate": 45,
+      "minimum": 50,
+      "tone": "amber",
+      "priceFactor": 100
+    },
+    {
+      "id": "takeaway-card",
+      "category": "menu",
+      "name": "外卖卡",
+      "rate": 32,
+      "minimum": 40,
+      "tone": "coral",
+      "priceFactor": 100
+    },
+    {
+      "id": "voucher",
+      "category": "menu",
+      "name": "代金券",
+      "rate": 32,
+      "minimum": 40,
+      "tone": "violet",
+      "priceFactor": 100
+    },
+    {
+      "id": "table-sign-menu",
+      "category": "menu",
+      "name": "台签菜单",
+      "rate": 55,
+      "minimum": 50,
+      "tone": "gold",
+      "priceFactor": 100
+    },
+    {
+      "id": "banner-menu",
+      "category": "menu",
+      "name": "喷绘布菜单",
+      "rate": 35,
+      "minimum": 40,
+      "tone": "red",
+      "priceFactor": 100
+    },
+    {
+      "id": "kt-board-menu",
+      "category": "menu",
+      "name": "KT板菜单",
+      "rate": 55,
+      "minimum": 50,
+      "tone": "pearl",
+      "priceFactor": 100
+    },
+    {
+      "id": "backlit-fabric",
+      "category": "other",
+      "name": "卡布灯箱布",
+      "rate": 58,
+      "minimum": 50,
+      "tone": "canvas2",
+      "priceFactor": 100
+    },
+    {
+      "id": "stretch-lightbox-fabric",
+      "category": "other",
+      "name": "拉布灯箱布",
+      "rate": 58,
+      "minimum": 50,
+      "tone": "canvas",
+      "priceFactor": 100
+    },
+    {
+      "id": "canvas",
+      "category": "other",
+      "name": "油画布",
+      "rate": 55,
+      "minimum": 50,
+      "tone": "oil",
+      "priceFactor": 100
+    },
+    {
+      "id": "business-card",
+      "category": "other",
+      "name": "名片",
+      "rate": 35,
+      "minimum": 40,
+      "tone": "ink",
+      "priceFactor": 100
+    },
+    {
+      "id": "flyer",
+      "category": "other",
+      "name": "宣传单",
+      "rate": 32,
+      "minimum": 40,
+      "tone": "sand",
+      "priceFactor": 100
+    },
+    {
+      "id": "kt-board-poster",
+      "category": "other",
+      "name": "KT板海报",
+      "rate": 55,
+      "minimum": 50,
+      "tone": "pearl",
+      "priceFactor": 100
+    },
+    {
+      "id": "sticker-poster",
+      "category": "other",
+      "name": "不干胶海报",
+      "rate": 42,
+      "minimum": 40,
+      "tone": "cyan",
+      "priceFactor": 100
+    },
+    {
+      "id": "photo-poster",
+      "category": "other",
+      "name": "写真海报",
+      "rate": 36,
+      "minimum": 40,
+      "tone": "rose",
+      "priceFactor": 100
+    },
+    {
+      "id": "banner",
+      "category": "other",
+      "name": "喷绘布",
+      "rate": 35,
+      "minimum": 40,
+      "tone": "red",
+      "priceFactor": 100
+    },
+    {
+      "id": "indoor-light-film",
+      "category": "other",
+      "name": "室内灯片",
+      "rate": 45,
+      "minimum": 50,
+      "tone": "sun",
+      "priceFactor": 100
+    },
+    {
+      "id": "static-cling",
+      "category": "other",
+      "name": "静电贴",
+      "rate": 40,
+      "minimum": 40,
+      "tone": "mint",
+      "priceFactor": 100
+    },
+    {
+      "id": "one-way-vision",
+      "category": "other",
+      "name": "单透贴",
+      "rate": 48,
+      "minimum": 50,
+      "tone": "smoke",
+      "priceFactor": 100
+    },
+    {
+      "id": "car-sticker",
+      "category": "other",
+      "name": "车贴",
+      "rate": 46,
+      "minimum": 50,
+      "tone": "blue",
+      "priceFactor": 100
+    },
+    {
+      "id": "glass-lettering",
+      "category": "other",
+      "name": "玻璃刻字",
+      "rate": 50,
+      "minimum": 50,
+      "tone": "silver",
+      "priceFactor": 100
+    },
+    {
+      "id": "copy-paper-print",
+      "category": "other",
+      "name": "打印纸打印",
+      "rate": 25,
+      "minimum": 40,
+      "tone": "ice",
+      "priceFactor": 100
+    }
   ],
   "optionFees": {}
 }
