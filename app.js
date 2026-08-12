@@ -211,7 +211,15 @@
         processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
       );
       return {
-        products: defaultProducts.map((item) => ({ ...item, ...(savedMap[item.id] || {}) })),
+        products: defaultProducts.map((item) => {
+          const savedItem = savedMap[item.id] || {};
+          return {
+            ...item,
+            ...savedItem,
+            pricingMode: item.pricingMode,
+            priceFactor: Math.max(0, num(savedItem.priceFactor, item.priceFactor ?? 100)),
+          };
+        }),
         processFees: { ...defaultProcessFees, ...(saved.processFees || {}) },
         optionFees: { ...(saved.optionFees || {}) },
         version: saved.version || 0,
@@ -246,6 +254,7 @@
         id: item.id,
         rate: num(item.rate),
         minimum: num(item.minimum, 40),
+        priceFactor: Math.max(0, num(item.priceFactor, 100)),
         bookPricing: item.bookPricing ? JSON.parse(JSON.stringify(item.bookPricing)) : undefined,
       })),
       styleFeeDefault: num(settings.styleFeeDefault, 10),
@@ -301,6 +310,7 @@
           ...item,
           rate: Math.max(0, num(draftMap[item.id]?.rate, item.rate)),
           minimum: Math.max(0, num(draftMap[item.id]?.minimum, item.minimum)),
+          priceFactor: Math.max(0, num(draftMap[item.id]?.priceFactor, item.priceFactor ?? 100)),
           ...(draftMap[item.id]?.bookPricing ? { bookPricing: draftMap[item.id].bookPricing } : {}),
         })),
       };
@@ -321,7 +331,11 @@
       const nextMap = Object.fromEntries(nextPricing.products.map((item) => [item.id, item]));
       settings = {
         ...settings,
-        products: settings.products.map((item) => ({ ...item, ...(nextMap[item.id] || {}) })),
+        products: settings.products.map((item) => ({
+          ...item,
+          ...(nextMap[item.id] || {}),
+          pricingMode: defaultProducts.find((entry) => entry.id === item.id)?.pricingMode || item.pricingMode,
+        })),
         version: nextPricing.version,
         updatedAt: nextPricing.updatedAt,
         styleFeeDefault: nextPricing.styleFeeDefault,
@@ -358,7 +372,15 @@
       const remote = await response.json();
       const remoteMap = Object.fromEntries((remote.products || remote.materials || []).map((item) => [item.id, item]));
       settings = {
-        products: defaultProducts.map((item) => ({ ...item, ...(remoteMap[item.id] || {}) })),
+        products: defaultProducts.map((item) => {
+          const remoteItem = remoteMap[item.id] || {};
+          return {
+            ...item,
+            ...remoteItem,
+            pricingMode: item.pricingMode,
+            priceFactor: Math.max(0, num(remoteItem.priceFactor, item.priceFactor ?? 100)),
+          };
+        }),
         processFees: {
           ...Object.fromEntries(
             processGroups.flatMap((group) => group.items.map((item) => [item.id, item.fee])),
@@ -471,15 +493,29 @@
     const areaEach = length * width;
     const pageMultiplier = currentProduct.multiplyByInnerPages ? innerPages : 1;
     const totalArea = areaEach * quantity * pageMultiplier;
+    const selectedOptions = selectedProductOptions();
+    const sourcePricing = window.ORIGINAL_PRICE_ENGINE?.supports(currentProduct.id)
+      ? window.ORIGINAL_PRICE_ENGINE.calculate({
+          productId: currentProduct.id,
+          specId: state.specId,
+          length,
+          width,
+          quantity,
+          styles,
+          innerPages,
+          optionNames: selectedOptions.map((item) => item.name),
+        })
+      : null;
+    const priceFactor = Math.max(0, num(currentProduct.priceFactor, 100));
+    const sourceAmount = sourcePricing ? sourcePricing.amount * priceFactor / 100 : null;
     const tierUnitPrice = currentProduct.pricingMode === "perBookTier" ? bookTierUnitPrice(currentProduct, state.specId, quantity) : null;
     if (currentProduct.pricingMode === "perBookTier" && tierUnitPrice === null) return null;
     const includedInnerPages = Math.max(0, Math.floor(num(currentProduct.bookPricing?.includedInnerPages)));
     const extraInnerPages = tierUnitPrice === null ? 0 : Math.max(0, innerPages - includedInnerPages);
     const extraInnerPageCost = tierUnitPrice === null ? 0 : extraInnerPages * quantity * Math.max(0, num(currentProduct.bookPricing?.extraInnerPagePrice));
-    const materialCost = tierUnitPrice === null ? totalArea * num(currentProduct.rate) : tierUnitPrice * quantity;
-    const styleCost = tierUnitPrice === null ? styles * Math.max(0, num(state.styleFee)) : 0;
-    const selectedOptions = selectedProductOptions();
-    const optionCost = selectedOptions.reduce((sum, item) => sum + totalArea * num(item.fee), 0);
+    const materialCost = sourceAmount !== null ? sourceAmount : tierUnitPrice === null ? totalArea * num(currentProduct.rate) : tierUnitPrice * quantity;
+    const styleCost = sourceAmount !== null || tierUnitPrice !== null ? 0 : styles * Math.max(0, num(state.styleFee));
+    const optionCost = sourceAmount !== null ? 0 : selectedOptions.reduce((sum, item) => sum + totalArea * num(item.fee), 0);
     const raw = materialCost + extraInnerPageCost + styleCost + optionCost;
     const floor =
       state.minimumMode === "material"
@@ -500,6 +536,9 @@
       areaEach,
       totalArea,
       materialCost,
+      sourcePricing,
+      sourceAmount,
+      priceFactor,
       tierUnitPrice,
       includedInnerPages,
       extraInnerPages,
@@ -557,10 +596,13 @@
       `尺寸：${result.length}m × ${result.width}m`,
       result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
+      result.sourcePricing ? `原表最高价：${result.sourcePricing.formula}` : "",
+      result.sourcePricing && result.priceFactor !== 100 ? `品类调价系数：${result.priceFactor}%` : "",
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
       `材料/工艺：${optionText}`,
       `报价：${money(result.final)}（每${quantityUnit}约 ${money(result.unit)}）`,
+      result.sourcePricing ? `价格来源：${result.sourcePricing.sourceReference}${result.sourcePricing.note ? `；${result.sourcePricing.note}` : ""}` : "",
       result.floorApplied ? `已执行最低价：${money(result.floor)}` : "",
       "最终价格以确认文件、实际品类和生产要求为准。",
     ]
@@ -587,7 +629,7 @@
         (item) => `
           <button class="material-card ${item.id === state.productId ? "selected" : ""}" data-action="product" data-id="${attr(item.id)}">
             <span class="material-swatch ${attr(item.tone)}"><b>${escapeHtml(item.name.slice(0, 1))}</b></span>
-            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
+            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "originalHighest" ? `原表最高价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
             <i>✓</i>
           </button>`,
       )
@@ -648,6 +690,7 @@
           ${result.product.category === "cookbook" ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张（${result.innerPages * 2} 页）</dd></div>` : ""}
           <div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
+          ${result.sourcePricing ? `<div><dt>原表最高价规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div><div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
           <div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>
           ${result.tierUnitPrice !== null ? `<div><dt>每本阶梯单价</dt><dd>${money(result.tierUnitPrice)} × ${result.quantity} 本</dd></div>` : ""}
           <div><dt>${result.tierUnitPrice !== null ? "菜谱本基础费" : "品类基础费"}</dt><dd>${money(result.materialCost)}</dd></div>
@@ -659,7 +702,7 @@
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">${result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
+        <p class="calculation-note">${result.sourcePricing ? `计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
   }
 
@@ -697,22 +740,15 @@
             <p>令牌必须属于老板账号，并仅授予 <b>zhb5621949/bjb</b> 仓库的 Contents 读写权限。<a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">创建授权令牌</a></p>
           </div>
           <div class="admin-defaults"><label><span>默认设计/开机费</span><input type="number" min="0" step="1" data-admin-setting="styleFeeDefault" value="${attr(adminDraft?.styleFeeDefault ?? settings.styleFeeDefault)}"><i>元/款</i></label><small>当前线上版本：V${settings.version || "-"}</small></div>
-          ${(() => {
-            const hardRing = draftMap["hard-ring-cookbook"];
-            const pricing = hardRing?.bookPricing;
-            if (!pricing) return "";
-            const tierInput = (spec, field) => `<input type="number" min="0" step="1" data-admin-book-spec="${spec}" data-admin-book-tier="${field}" value="${attr(pricing.specs[spec]?.[field] ?? 0)}">`;
-            return `<section class="admin-book-pricing"><div><h3>铁环款式 · 每本阶梯价</h3><p>这些价格优先于下面的平方米单价；大号与 A3 共用一套价格。</p></div><div class="admin-book-rules"><label><span>包含内页</span><input type="number" min="0" step="1" data-admin-book-setting="includedInnerPages" value="${attr(pricing.includedInnerPages)}"><i>张</i></label><label><span>超出后每张每本</span><input type="number" min="0" step="1" data-admin-book-setting="extraInnerPagePrice" value="${attr(pricing.extraInnerPagePrice)}"><i>元</i></label></div><div class="admin-tier-grid"><b>规格</b><b>1本/本</b><b>2本/本</b><b>3–4本/本</b><b>5本以上/本</b><strong>A4</strong>${tierInput("a4", "one")}${tierInput("a4", "two")}${tierInput("a4", "threeToFour")}${tierInput("a4", "fivePlus")}<strong>大号 / A3</strong>${tierInput("large", "one")}${tierInput("large", "two")}${tierInput("large", "threeToFour")}${tierInput("large", "fivePlus")}</div></section>`;
-          })()}
           <div class="settings-table">
-            <div class="settings-row settings-title"><span>具体品类</span><span>单价（元/㎡）</span><span>默认最低价</span></div>
+            <div class="settings-row settings-title"><span>具体品类</span><span>原表价系数</span><span>默认最低价</span></div>
             ${settings.products
-              .filter((item) => item.pricingMode !== "perBookTier")
               .map(
-                (item) => `<div class="settings-row"><strong>${escapeHtml(productCategories.find((category) => category.id === item.category)?.name || "其他")} · ${escapeHtml(item.name)}</strong><input type="number" min="0" step="0.1" data-admin-setting="rate" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.rate ?? item.rate)}"><input type="number" min="0" step="1" data-admin-setting="minimum" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.minimum ?? item.minimum)}"></div>`,
+                (item) => `<div class="settings-row"><strong>${escapeHtml(productCategories.find((category) => category.id === item.category)?.name || "其他")} · ${escapeHtml(item.name)}</strong><label class="factor-input"><input type="number" min="0" step="1" data-admin-setting="priceFactor" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.priceFactor ?? item.priceFactor ?? 100)}"><i>%</i></label><input type="number" min="0" step="1" data-admin-setting="minimum" data-product-id="${attr(item.id)}" value="${attr(draftMap[item.id]?.minimum ?? item.minimum)}"></div>`,
               )
               .join("")}
           </div>
+          <p class="admin-factor-help">100%＝完全按原表最高价；110%＝整套档位上调10%；90%＝整套档位下调10%。这样不用逐个数量档位修改。</p>
           <div class="admin-status ${adminStatus.includes("成功") ? "success" : ""}" aria-live="polite">${escapeHtml(adminStatus || "价格发布后，客服无需重新安装软件。")}</div>
           <footer><button class="text-button" data-action="reset-settings" ${adminBusy ? "disabled" : ""}>恢复初始价格</button><button class="primary" data-action="publish-settings" ${adminBusy ? "disabled" : ""}>${adminBusy ? "正在发布…" : "发布全部价格"}</button></footer>
         </section>
@@ -723,6 +759,7 @@
     const currentProduct = product();
     const isAdditionalInnerPages = Boolean(currentProduct.multiplyByInnerPages);
     const isBookTierPricing = currentProduct.pricingMode === "perBookTier";
+    const usesOriginalPricing = currentProduct.pricingMode === "originalHighest";
     latestResult = state.resultVisible ? calculate() : null;
     return `
       <section class="calculator-layout">
@@ -731,16 +768,16 @@
           <div class="parameter-row category-row"><div class="row-label">品类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>请选择具体品类</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
           <div class="parameter-row"><div class="row-label">尺寸（米）</div><div class="size-inputs"><label><span>长边</span><input type="number" min="0" step="0.01" data-field="length" value="${attr(state.length)}" placeholder="例如 1.2"></label><b>×</b><label><span>短边</span><input type="number" min="0" step="0.01" data-field="width" value="${attr(state.width)}" placeholder="例如 0.8"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width)).toFixed(3) : "0.000"} ㎡</small></div></div>
-          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页张数</div><div class="inner-page-input"><label><span>多少张内页</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="例如 8"><i>张</i></label><strong class="page-conversion">${Math.max(0, Math.floor(num(state.innerPages))) ? `＝ ${Math.floor(num(state.innerPages)) * 2} 页` : "1 张＝2 页"}</strong><small>${isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张（${currentProduct.bookPricing.includedInnerPages * 2} 页）内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单张面积 × 内页张数 × 菜谱本数量计价；页面数仅作显示" : "请输入实际纸张张数，系统自动换算页面数"}</small></div></div>` : ""}
+          ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页张数</div><div class="inner-page-input"><label><span>多少张内页</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="例如 8"><i>张</i></label><strong class="page-conversion">${Math.max(0, Math.floor(num(state.innerPages))) ? `＝ ${Math.floor(num(state.innerPages)) * 2} 页` : "1 张＝2 页"}</strong><small>${usesOriginalPricing ? "系统会按原表对应的内页张数档位取最高价" : isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张（${currentProduct.bookPricing.includedInnerPages * 2} 页）内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单张面积 × 内页张数 × 菜谱本数量计价；页面数仅作显示" : "请输入实际纸张张数，系统自动换算页面数"}</small></div></div>` : ""}
           ${productOptionRows()}
-          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${isAdditionalInnerPages || isBookTierPricing ? "菜谱本数量（本）" : "总数量（张）"}</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
+          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${currentProduct.category === "cookbook" ? "菜谱本数量（本）" : currentProduct.id === "table-sign-menu" ? "总数量（个）" : currentProduct.id === "multipart-form" ? "总数量（本）" : "总数量（张）"}</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
             <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随品类</b><small>${money(currentProduct.minimum)}</small></label>
             <label class="${state.minimumMode === "40" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="40" ${state.minimumMode === "40" ? "checked" : ""}><b>最低 40 元</b></label>
             <label class="${state.minimumMode === "50" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="50" ${state.minimumMode === "50" ? "checked" : ""}><b>最低 50 元</b></label>
             <label class="${state.minimumMode === "custom" ? "selected" : ""} custom-minimum"><input type="radio" name="minimum" data-minimum="custom" ${state.minimumMode === "custom" ? "checked" : ""}><b>自定义</b><input type="number" min="0" data-field="custom-minimum" value="${attr(state.customMinimum)}"><small>元</small></label>
           </div></div>
-          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${isBookTierPricing ? "按每本阶梯单价" : `${money(currentProduct.rate)}/㎡`}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
+          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${currentProduct.pricingMode === "originalHighest" ? `按原表最高价 · 系数${num(currentProduct.priceFactor, 100)}%` : isBookTierPricing ? "按每本阶梯单价" : `${money(currentProduct.rate)}/㎡`}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
         </div>
         ${resultPanel(latestResult)}
       </section>`;
@@ -782,7 +819,7 @@
       adminStatus = "";
     } else if (action === "reset-settings") {
       adminDraft = {
-        products: defaultProducts.map((item) => ({ id: item.id, rate: num(item.rate), minimum: num(item.minimum, 40), bookPricing: item.bookPricing ? JSON.parse(JSON.stringify(item.bookPricing)) : undefined })),
+        products: defaultProducts.map((item) => ({ id: item.id, rate: num(item.rate), minimum: num(item.minimum, 40), priceFactor: Math.max(0, num(item.priceFactor, 100)), bookPricing: item.bookPricing ? JSON.parse(JSON.stringify(item.bookPricing)) : undefined })),
         styleFeeDefault: 10,
       };
       adminStatus = "已恢复初始价格，点击“发布全部价格”后才会生效";

@@ -196,6 +196,13 @@
   }
 
   window.PRODUCT_CATALOG.forEach((product) => {
+    product.pricingMode = "originalHighest";
+    product.priceFactor = 100;
+    product.quantityUnit = product.category === "cookbook" || product.id === "multipart-form"
+      ? "本"
+      : product.id === "table-sign-menu"
+        ? "个"
+        : "张";
     const overrides = optionOverrides[product.id] || {};
     product.optionGroups = groupDefinitions
       .map((definition) => {

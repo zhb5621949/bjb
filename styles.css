@@ -1691,6 +1691,32 @@ button {
   }
 }
 
+.factor-input {
+  align-items: center;
+  display: flex;
+  gap: 5px;
+}
+
+.factor-input input {
+  min-width: 0;
+  width: 100%;
+}
+
+.factor-input i {
+  color: #69717a;
+  font-style: normal;
+}
+
+.admin-factor-help {
+  background: #f4f7fb;
+  border-radius: 10px;
+  color: #59616b;
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 12px 0 0;
+  padding: 10px 12px;
+}
+
 @media print {
   body {
     background: white;
