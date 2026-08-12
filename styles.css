@@ -1348,6 +1348,62 @@ button {
   font-style: normal;
 }
 
+.admin-book-pricing {
+  padding: 14px 20px;
+  background: #f7fbff;
+  border-bottom: 1px solid #cddce9;
+}
+
+.admin-book-pricing h3,
+.admin-book-pricing p {
+  margin: 0;
+}
+
+.admin-book-pricing h3 {
+  font-size: 12px;
+}
+
+.admin-book-rules {
+  margin: 10px 0;
+  display: flex;
+  gap: 12px;
+}
+
+.admin-book-rules label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.admin-book-rules input,
+.admin-tier-grid input {
+  width: 82px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #aebfcd;
+  border-radius: 4px;
+}
+
+.admin-book-rules i {
+  color: var(--muted);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.admin-tier-grid {
+  display: grid;
+  grid-template-columns: 120px repeat(4, minmax(80px, 1fr));
+  align-items: center;
+  gap: 7px;
+}
+
+.admin-tier-grid b,
+.admin-tier-grid strong {
+  font-size: 9px;
+}
+
 .admin-status {
   min-height: 34px;
   padding: 8px 20px;
@@ -1529,6 +1585,16 @@ button {
   .admin-defaults {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .admin-book-rules {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-tier-grid {
+    grid-template-columns: 90px repeat(4, minmax(62px, 1fr));
+    overflow-x: auto;
   }
 
   .calculator-layout {

@@ -28,6 +28,17 @@
       shellProcess: "雕刻 / 彩印 / UV 打印",
       materialProcess: "铜版纸包裹 PVC，内页厚实档次高；数码机器喷印画面",
       specs: aSeriesBook,
+      pricingMode: "perBookTier",
+      quantityUnit: "本",
+      bookPricing: {
+        includedInnerPages: 8,
+        extraInnerPagePrice: 10,
+        specs: {
+          a4: { one: 260, two: 180, threeToFour: 160, fivePlus: 150 },
+          large: { one: 280, two: 230, threeToFour: 200, fivePlus: 180 },
+          a3: { one: 280, two: 230, threeToFour: 200, fivePlus: 180 },
+        },
+      },
     },
     {
       id: "deluxe-inner-nail-cookbook", category: "cookbook", name: "精装内钉菜谱", rate: 48, minimum: 50, tone: "steel",

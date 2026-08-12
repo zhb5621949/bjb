@@ -1,7 +1,7 @@
 {
-  "version": 9,
-  "updatedAt": "2026-08-12T11:30:00+08:00",
-  "note": "塑封菜单增加12丝过塑膜塑封，菜单类印刷工艺默认勾选",
+  "version": 10,
+  "updatedAt": "2026-08-12T13:30:00+08:00",
+  "note": "铁环款式菜谱本按每本阶梯单价计价，8张内页以内包含，超出部分每张每本加10元",
   "styleFeeDefault": 10,
   "categories": [
     { "id": "cookbook", "name": "菜谱" },
@@ -9,7 +9,25 @@
     { "id": "other", "name": "其他" }
   ],
   "products": [
-    { "id": "hard-ring-cookbook", "category": "cookbook", "name": "硬壳铁环款式", "rate": 58, "minimum": 50, "tone": "ink" },
+    {
+      "id": "hard-ring-cookbook",
+      "category": "cookbook",
+      "name": "硬壳铁环款式",
+      "rate": 150,
+      "minimum": 150,
+      "tone": "ink",
+      "pricingMode": "perBookTier",
+      "quantityUnit": "本",
+      "bookPricing": {
+        "includedInnerPages": 8,
+        "extraInnerPagePrice": 10,
+        "specs": {
+          "a4": { "one": 260, "two": 180, "threeToFour": 160, "fivePlus": 150 },
+          "large": { "one": 280, "two": 230, "threeToFour": 200, "fivePlus": 180 },
+          "a3": { "one": 280, "two": 230, "threeToFour": 200, "fivePlus": 180 }
+        }
+      }
+    },
     { "id": "deluxe-inner-nail-cookbook", "category": "cookbook", "name": "精装内钉菜谱", "rate": 48, "minimum": 50, "tone": "steel" },
     { "id": "deluxe-outer-nail-cookbook", "category": "cookbook", "name": "精装外钉菜谱", "rate": 48, "minimum": 50, "tone": "gold" },
     { "id": "butterfly-cookbook", "category": "cookbook", "name": "蝴蝶装菜谱", "rate": 68, "minimum": 50, "tone": "violet" },
