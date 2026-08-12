@@ -291,47 +291,115 @@ button {
 }
 
 .category-tabs {
-  margin-bottom: 10px;
+  margin-bottom: 14px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 12px;
 }
 
 .category-tab {
-  min-height: 58px;
-  padding: 9px 12px;
+  position: relative;
+  min-height: 84px;
+  padding: 14px 18px 14px 58px;
   display: flex;
   align-items: flex-start;
   flex-direction: column;
   justify-content: center;
-  gap: 3px;
-  color: #5e656b;
+  gap: 5px;
+  overflow: hidden;
+  color: #41474d;
   text-align: left;
-  background: #fafafa;
-  border: 1px solid #d9dde0;
-  border-radius: 6px;
+  background: #fffdf3;
+  border: 2px solid #e0c85a;
+  border-radius: 10px;
+  box-shadow: 0 5px 14px rgba(35, 39, 43, 0.08);
   cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.category-tab::before {
+  position: absolute;
+  left: 16px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  color: #17191b;
+  background: var(--yellow);
+  border-radius: 50%;
+  font-size: 15px;
+  font-weight: 900;
+  content: "1";
+}
+
+.category-tab:nth-child(2) {
+  background: #f3f8ff;
+  border-color: #82aee2;
+}
+
+.category-tab:nth-child(2)::before {
+  color: #fff;
+  background: #3579c7;
+  content: "2";
+}
+
+.category-tab:nth-child(3) {
+  background: #f4f5f6;
+  border-color: #969da3;
+}
+
+.category-tab:nth-child(3)::before {
+  color: #fff;
+  background: #343a40;
+  content: "3";
 }
 
 .category-tab strong {
-  color: #292d31;
-  font-size: 14px;
+  color: #16191c;
+  font-size: 21px;
+  font-weight: 900;
+  line-height: 1.1;
 }
 
 .category-tab small {
-  color: #92989e;
-  font-size: 8px;
+  color: #656d74;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .category-tab:hover {
-  border-color: #9fa5aa;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(35, 39, 43, 0.14);
 }
 
 .category-tab.selected {
   color: #17191b;
-  background: #fff9d9;
-  border-color: var(--yellow-deep);
-  box-shadow: inset 4px 0 0 var(--yellow);
+  border-color: #111;
+  box-shadow: 0 0 0 3px var(--yellow), 0 9px 22px rgba(35, 39, 43, 0.18);
+  transform: translateY(-2px);
+}
+
+.category-tab.selected::after {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  padding: 3px 8px;
+  color: #111;
+  background: var(--yellow);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  content: "已选择 ✓";
+}
+
+.category-main-label {
+  min-height: 84px;
+  color: #17191b;
+  background: var(--yellow);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .category-detail-label {
@@ -1634,7 +1702,35 @@ button {
   }
 
   .category-tabs {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .category-tab {
+    min-height: 76px;
+    padding: 12px 8px 10px 40px;
+  }
+
+  .category-tab::before {
+    left: 8px;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+  }
+
+  .category-tab strong {
+    font-size: 17px;
+  }
+
+  .category-tab small {
+    display: none;
+  }
+
+  .category-tab.selected::after {
+    top: 4px;
+    right: 4px;
+    padding: 2px 5px;
+    font-size: 8px;
   }
 
   .size-inputs {
