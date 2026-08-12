@@ -591,11 +591,14 @@
     const optionText = result.options.map((item) => `${item.groupName}：${item.name}`).join("；") || "未选择";
     const quantityUnit = result.product.quantityUnit || "张";
     const isCookbook = result.product.category === "cookbook";
+    const hasShellProcess = result.product.optionGroups?.some((group) => group.id === "shell-process");
+    const shellProcessText = result.options.filter((item) => item.groupId === "shell-process").map((item) => item.name).join("、") || "未选择";
     return [
       `品类：${result.product.name}`,
       result.spec ? `规格：${result.spec.label}` : "",
       `尺寸：${result.length}m × ${result.width}m`,
       result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
+      isCookbook && hasShellProcess ? `外壳工艺：${shellProcessText}` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
       result.sourcePricing && !isCookbook ? `原表最高价：${result.sourcePricing.formula}` : "",
       result.sourcePricing && result.priceFactor !== 100 ? `品类调价系数：${result.priceFactor}%` : "",
@@ -682,6 +685,8 @@
     }
     const quantityUnit = result.product.quantityUnit || "张";
     const isCookbook = result.product.category === "cookbook";
+    const hasShellProcess = result.product.optionGroups?.some((group) => group.id === "shell-process");
+    const shellProcessText = result.options.filter((item) => item.groupId === "shell-process").map((item) => item.name).join("、") || "未选择";
     return `
       <aside class="result-panel ready">
         <div class="result-heading"><span>算价结果</span><small>${result.product.name}</small></div>
@@ -690,6 +695,7 @@
         <dl class="breakdown">
           ${result.spec ? `<div><dt>产品规格</dt><dd>${escapeHtml(result.spec.label)}</dd></div>` : ""}
           ${isCookbook ? `<div><dt>内页数量</dt><dd>${result.innerPages} 张（${result.innerPages * 2} 页）</dd></div>` : ""}
+          ${isCookbook && hasShellProcess ? `<div class="shell-process-result"><dt>外壳工艺</dt><dd>${escapeHtml(shellProcessText)}</dd></div>` : ""}
           ${!isCookbook ? `<div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
           ${result.sourcePricing ? `${!isCookbook ? `<div><dt>原表最高价规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
