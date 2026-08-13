@@ -2,6 +2,7 @@
   "use strict";
 
   const sourceCatalog = window.OFFLINE_CATALOG || { groups: [] };
+  const productImages = window.PRODUCT_IMAGES || {};
   const STORAGE_KEY = "print-calculator-github-client-v1";
   const SETTINGS_KEY = "print-calculator-github-pricing-v1";
   const GITHUB_PRICING_API = "https://api.github.com/repos/zhb5621949/bjb/contents/data/pricing.json";
@@ -632,7 +633,7 @@
       .map(
         (item) => `
           <button class="material-card ${item.id === state.productId ? "selected" : ""}" data-action="product" data-id="${attr(item.id)}">
-            <span class="material-swatch ${attr(item.tone)}"><b>${escapeHtml(item.name.slice(0, 1))}</b></span>
+            <span class="material-swatch ${attr(item.tone)}">${productImages[item.id]?.image ? `<img src="${attr(productImages[item.id].image)}" alt="${attr(item.name)}实物图" loading="lazy">` : `<b>${escapeHtml(item.name.slice(0, 1))}</b>`}</span>
             <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "originalHighest" ? `原表最高价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
             <i>✓</i>
           </button>`,
