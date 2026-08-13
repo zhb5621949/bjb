@@ -3,6 +3,8 @@
 
   const sourceCatalog = window.OFFLINE_CATALOG || { groups: [] };
   const productImages = window.PRODUCT_IMAGES || {};
+  const productGalleries = window.PRODUCT_GALLERIES || {};
+  const productProfiles = window.PRODUCT_PROFILES || {};
   const STORAGE_KEY = "print-calculator-github-client-v1";
   const SETTINGS_KEY = "print-calculator-github-pricing-v1";
   const GITHUB_PRICING_API = "https://api.github.com/repos/zhb5621949/bjb/contents/data/pricing.json";
@@ -176,6 +178,7 @@
       customMinimum: "40",
       productOptions: optionStateFor(defaultProducts[0]),
       referenceQuery: "",
+      galleryIndex: 0,
       resultVisible: false,
       settingsOpen: false,
       toast: "",
@@ -462,6 +465,7 @@
     state.width = firstSpec?.width ? String(firstSpec.width) : "";
     state.innerPages = "";
     state.productOptions = optionStateFor(selectedProduct);
+    state.galleryIndex = 0;
     state.resultVisible = false;
   }
 
@@ -676,14 +680,39 @@
       .join("");
   }
 
+  function productShowcase() {
+    const currentProduct = product();
+    const fallbackImage = productImages[currentProduct.id]?.image;
+    const gallery = (productGalleries[currentProduct.id] || (fallbackImage ? [fallbackImage] : [])).filter(Boolean);
+    const profile = productProfiles[currentProduct.id] || {
+      features: "根据所选材料、尺寸和工艺定制，实际效果以确认文件为准。",
+      uses: "适合门店宣传、餐饮展示及日常印刷使用。",
+    };
+    const activeIndex = gallery.length ? Math.min(Math.max(0, Math.floor(num(state.galleryIndex))), gallery.length - 1) : 0;
+    const activeImage = gallery[activeIndex];
+    return `
+      <section class="product-showcase" aria-label="${attr(currentProduct.name)}图片与说明">
+        <div class="showcase-heading"><div><span>已选产品</span><h2>${escapeHtml(currentProduct.name)}</h2></div><b>${gallery.length ? `${activeIndex + 1} / ${gallery.length}` : "暂无图片"}</b></div>
+        ${activeImage ? `
+          <div class="showcase-stage">
+            <img src="${attr(activeImage)}" alt="${attr(`${currentProduct.name} 实物图 ${activeIndex + 1}`)}">
+            ${gallery.length > 1 ? `<button class="gallery-arrow previous" data-action="gallery-previous" aria-label="上一张图片">‹</button><button class="gallery-arrow next" data-action="gallery-next" aria-label="下一张图片">›</button>` : ""}
+          </div>
+          ${gallery.length > 1 ? `<div class="gallery-thumbnails" role="tablist" aria-label="选择产品图片">${gallery.map((image, index) => `<button class="${index === activeIndex ? "selected" : ""}" data-action="gallery-image" data-index="${index}" aria-label="查看第 ${index + 1} 张图片"><img src="${attr(image)}" alt=""></button>`).join("")}</div>` : ""}
+        ` : `<div class="showcase-no-image">该产品暂未配置实物图片</div>`}
+        <div class="showcase-profile">
+          <div><span>产品特点</span><p>${escapeHtml(profile.features)}</p></div>
+          <div><span>适用范围</span><p>${escapeHtml(profile.uses)}</p></div>
+        </div>
+      </section>`;
+  }
+
   function resultPanel(result) {
-    if (!result) {
-      return `
+    const quotePanel = !result ? `
         <aside class="result-panel">
           <div class="result-empty"><span>¥</span><h2>等待算价</h2><p>选择品类，输入长宽、数量和款数后，即可计算。</p></div>
           <div class="floor-rule"><b>最低价保护</b><p>即使实际计算低于起步价，也会按您选择的 40 元、50 元或自定义最低价报价。</p></div>
-        </aside>`;
-    }
+        </aside>` : (() => {
     const quantityUnit = result.product.quantityUnit || "张";
     const isCookbook = result.product.category === "cookbook";
     const hasShellProcess = result.product.optionGroups?.some((group) => group.id === "shell-process");
@@ -713,6 +742,8 @@
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
         <p class="calculation-note">${isCookbook ? "报价按所选规格、内页张数和本数计算，最终价格以确认文件和生产要求为准。" : result.sourcePricing ? `计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
+    })();
+    return `<div class="result-column">${productShowcase()}${quotePanel}</div>`;
   }
 
   function referenceView() {
@@ -854,6 +885,14 @@
       selectProduct(settings.products.find((item) => item.category === state.categoryId)?.id || settings.products[0].id);
     } else if (action === "product") {
       selectProduct(target.dataset.id);
+    } else if (action === "gallery-previous" || action === "gallery-next") {
+      const gallery = productGalleries[product().id] || [];
+      if (gallery.length) {
+        const direction = action === "gallery-next" ? 1 : -1;
+        state.galleryIndex = (Math.floor(num(state.galleryIndex)) + direction + gallery.length) % gallery.length;
+      }
+    } else if (action === "gallery-image") {
+      state.galleryIndex = Math.max(0, Math.floor(num(target.dataset.index)));
     } else if (action === "spec") {
       const selectedSpec = product().specs?.find((item) => item.id === target.dataset.id);
       if (selectedSpec) {
