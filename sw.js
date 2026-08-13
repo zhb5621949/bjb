@@ -1,4 +1,4 @@
-const CACHE_NAME = "photo-pricing-shell-v15";
+const CACHE_NAME = "photo-pricing-shell-v16";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const APP_SHELL = [
   "./product-data.js",
   "./source-pricing.js",
   "./catalog-data.js",
+  "./product-images.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png",
   "./icons/icon-512.png"
