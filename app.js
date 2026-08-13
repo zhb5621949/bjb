@@ -717,22 +717,36 @@
 
   function referenceView() {
     const query = state.referenceQuery.trim().toLowerCase();
-    const rows = sourceCatalog.groups
-      .flatMap((group) => group.items)
-      .filter((item) =>
-        [item.product, item.spec, item.quantity, item.detail, item.notes].join(" ").toLowerCase().includes(query),
-      )
-      .slice(0, 80);
+    const groupOrder = ["menus", "general", "printed"];
+    const groups = [...sourceCatalog.groups]
+      .sort((left, right) => groupOrder.indexOf(left.id) - groupOrder.indexOf(right.id))
+      .map((group) => ({
+        ...group,
+        items: group.items.filter((item) =>
+          [item.product, item.spec, item.quantity, item.detail, item.notes]
+            .join(" ")
+            .toLowerCase()
+            .includes(query),
+        ),
+      }))
+      .filter((group) => group.items.length);
+    const rowCount = groups.reduce((total, group) => total + group.items.length, 0);
+    const referenceCard = (item) => `
+      <article>
+        <div><span>${escapeHtml(item.sheet)} · 第 ${item.row} 行</span><h3>${escapeHtml(item.product)}</h3><p>${escapeHtml([item.spec, item.quantity, item.detail].filter(Boolean).join(" · "))}</p></div>
+        <div class="reference-prices">${item.prices.map((price) => `<span><small>${escapeHtml(price.label)}</small><b>${escapeHtml(price.value)}</b></span>`).join("")}</div>
+        ${item.notes ? `<aside>${escapeHtml(item.notes)}</aside>` : ""}
+      </article>`;
     return `
       <section class="reference-page">
-        <div class="reference-head"><div><span class="eyebrow">原 Excel 数据</span><h1>原表参考价查询</h1><p>智能算价用于快速估算；拿不准时，可在这里核对原报价表。</p></div><label class="reference-search"><span>⌕</span><input data-field="reference-query" value="${attr(state.referenceQuery)}" placeholder="搜索产品、规格或数量"></label></div>
-        <div class="reference-grid">
-          ${rows
-            .map(
-              (item) => `<article><div><span>${escapeHtml(item.sheet)} · 第 ${item.row} 行</span><h3>${escapeHtml(item.product)}</h3><p>${escapeHtml([item.spec, item.quantity, item.detail].filter(Boolean).join(" · "))}</p></div><div class="reference-prices">${item.prices.slice(0, 8).map((price) => `<span><small>${escapeHtml(price.label)}</small><b>${escapeHtml(price.value)}</b></span>`).join("")}</div>${item.notes ? `<aside>${escapeHtml(item.notes)}</aside>` : ""}</article>`,
-            )
-            .join("") || `<div class="no-reference">没有匹配结果，请缩短关键词。</div>`}
-        </div>
+        <div class="reference-head"><div><span class="eyebrow">原 Excel 数据 · 全部档位</span><h1>原表参考价查询</h1><p>菜谱、菜单、印刷品已分区展示；每一行的全部数量价格均可查看。</p></div><label class="reference-search"><span>⌕</span><input data-field="reference-query" value="${attr(state.referenceQuery)}" placeholder="搜索菜谱、菜单、产品、规格或数量"></label></div>
+        <div class="reference-summary"><strong>${query ? `找到 ${rowCount} 条匹配价格` : `已载入全部 ${rowCount} 条价格`}</strong><span>菜谱本 123 条 · 菜单/常规 96 条 · 勾选菜单/联单 36 条</span></div>
+        ${!query ? `<nav class="reference-jumps">${groups.map((group) => `<a href="#reference-${attr(group.id)}"><b>${escapeHtml(group.name)}</b><span>${group.items.length} 条</span></a>`).join("")}</nav>` : ""}
+        ${groups
+          .map(
+            (group) => `<section class="reference-group" id="reference-${attr(group.id)}"><header><div><span>原表分类</span><h2>${escapeHtml(group.name)}</h2></div><b>${group.items.length} 条报价</b></header><div class="reference-grid">${group.items.map(referenceCard).join("")}</div></section>`,
+          )
+          .join("") || `<div class="no-reference">没有匹配结果，请缩短关键词。</div>`}
       </section>`;
   }
 
