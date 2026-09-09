@@ -192,6 +192,10 @@
       const selectedProduct = defaultProducts.find((item) => item.id === savedProductId) || defaultProducts[0];
       const savedSpec = selectedProduct.specs?.find((item) => item.id === saved.specId);
       const selectedSpec = savedSpec || selectedProduct.specs?.[0];
+      const savedQuantity = Math.max(1, Math.floor(num(saved.quantity, 1)));
+      const normalizedQuantity = selectedProduct.quantityOptions?.length
+        ? (selectedProduct.quantityOptions.includes(savedQuantity) ? savedQuantity : selectedProduct.quantityOptions[0])
+        : savedQuantity;
       return {
         ...freshState(),
         ...saved,
@@ -200,6 +204,7 @@
         specId: selectedSpec?.id || "",
         length: savedSpec ? (saved.length || (selectedSpec?.length ? String(centimetres(selectedSpec.length)) : "")) : (selectedSpec?.length ? String(centimetres(selectedSpec.length)) : ""),
         width: savedSpec ? (saved.width || (selectedSpec?.width ? String(centimetres(selectedSpec.width)) : "")) : (selectedSpec?.width ? String(centimetres(selectedSpec.width)) : ""),
+        quantity: String(normalizedQuantity),
         productOptions: normalizeOptionState(selectedProduct, saved.productOptions),
       };
     } catch {
@@ -467,6 +472,7 @@
     state.specId = firstSpec?.id || "";
     state.length = firstSpec?.length ? String(centimetres(firstSpec.length)) : "";
     state.width = firstSpec?.width ? String(centimetres(firstSpec.width)) : "";
+    if (selectedProduct.quantityOptions?.length) state.quantity = String(selectedProduct.quantityOptions[0]);
     state.innerPages = "";
     state.productOptions = optionStateFor(selectedProduct);
     state.galleryIndex = 0;
@@ -491,16 +497,19 @@
   }
 
   function calculate() {
+    const currentProduct = product();
     const lengthCm = Math.max(0, num(state.length));
     const widthCm = Math.max(0, num(state.width));
     const length = lengthCm / 100;
     const width = widthCm / 100;
-    const quantity = Math.max(1, Math.floor(num(state.quantity, 1)));
+    const requestedQuantity = Math.max(1, Math.floor(num(state.quantity, 1)));
+    const quantity = currentProduct.quantityOptions?.length
+      ? (currentProduct.quantityOptions.includes(requestedQuantity) ? requestedQuantity : currentProduct.quantityOptions[0])
+      : requestedQuantity;
     const styles = Math.max(1, Math.floor(num(state.styles, 1)));
-    const innerPages = product().category === "cookbook" ? Math.max(0, Math.floor(num(state.innerPages))) : 0;
-    if (!length || !width || (product().category === "cookbook" && !innerPages)) return null;
+    const innerPages = currentProduct.category === "cookbook" ? Math.max(0, Math.floor(num(state.innerPages))) : 0;
+    if (!length || !width || (currentProduct.category === "cookbook" && !innerPages)) return null;
 
-    const currentProduct = product();
     const areaEach = length * width;
     const pageMultiplier = currentProduct.multiplyByInnerPages ? innerPages : 1;
     const totalArea = areaEach * quantity * pageMultiplier;
@@ -830,6 +839,10 @@
     const isAdditionalInnerPages = Boolean(currentProduct.multiplyByInnerPages);
     const isBookTierPricing = currentProduct.pricingMode === "perBookTier";
     const usesOriginalPricing = currentProduct.pricingMode === "originalHighest";
+    const quantityLabel = currentProduct.category === "cookbook" ? "菜谱本数量（本）" : currentProduct.id === "table-sign-menu" ? "总数量（个）" : currentProduct.id === "multipart-form" ? "总数量（本）" : "总数量（张）";
+    const quantityControl = currentProduct.quantityOptions?.length
+      ? `<select data-field="quantity" aria-label="${attr(quantityLabel)}">${currentProduct.quantityOptions.map((quantity) => `<option value="${quantity}" ${String(quantity) === String(state.quantity) ? "selected" : ""}>${quantity === 10000 ? "1万" : quantity} 张</option>`).join("")}</select>`
+      : `<input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}">`;
     latestResult = state.resultVisible ? calculate() : null;
     return `
       <section class="calculator-layout">
@@ -840,7 +853,7 @@
           <div class="parameter-row"><div class="row-label">尺寸（厘米）</div><div class="size-inputs"><label><span>长边（cm）</span><input type="number" min="0" step="0.1" data-field="length" value="${attr(state.length)}" placeholder="例如 120"></label><b>×</b><label><span>短边（cm）</span><input type="number" min="0" step="0.1" data-field="width" value="${attr(state.width)}" placeholder="例如 80"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width) / 10000).toFixed(3) : "0.000"} ㎡</small></div></div>
           ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页张数</div><div class="inner-page-input"><label><span>多少张内页</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="例如 8"><i>张</i></label><strong class="page-conversion">${Math.max(0, Math.floor(num(state.innerPages))) ? `＝ ${Math.floor(num(state.innerPages)) * 2} 页` : "1 张＝2 页"}</strong><small>${usesOriginalPricing ? "系统会按原表对应的内页张数档位取最高价" : isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张（${currentProduct.bookPricing.includedInnerPages * 2} 页）内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单张面积 × 内页张数 × 菜谱本数量计价；页面数仅作显示" : "请输入实际纸张张数，系统自动换算页面数"}</small></div></div>` : ""}
           ${productOptionRows()}
-          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${currentProduct.category === "cookbook" ? "菜谱本数量（本）" : currentProduct.id === "table-sign-menu" ? "总数量（个）" : currentProduct.id === "multipart-form" ? "总数量（本）" : "总数量（张）"}</span><input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}"></label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
+          <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${escapeHtml(quantityLabel)}</span>${quantityControl}</label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>每款设计/开机费</span><input type="number" min="0" step="1" data-field="style-fee" value="${attr(state.styleFee)}"><i>元/款</i></label></div></div>
           <div class="parameter-row"><div class="row-label">最低价</div><div class="minimum-options">
             <label class="${state.minimumMode === "material" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="material" ${state.minimumMode === "material" ? "checked" : ""}><b>跟随品类</b><small>${money(currentProduct.minimum)}</small></label>
             <label class="${state.minimumMode === "40" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="40" ${state.minimumMode === "40" ? "checked" : ""}><b>最低 40 元</b></label>

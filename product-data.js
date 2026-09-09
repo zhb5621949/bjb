@@ -113,7 +113,7 @@
     ] },
     { id: "photo-menu", category: "menu", name: "写真菜单", rate: 38, minimum: 40, tone: "rose", innerMaterial: "防水防晒 PP 海报纸材料", materialProcess: "写真机印刷", specs: customSpec },
     { id: "photo-paper-menu", category: "menu", name: "相纸菜单", rate: 38, minimum: 40, tone: "blue", innerMaterial: "防水防晒相纸材料", materialProcess: "写真机印刷", specs: customSpec },
-    { id: "checklist-menu", category: "menu", name: "勾选菜单", rate: 35, minimum: 40, tone: "lime", innerMaterial: "行标 128 克 / 157 克铜版纸", materialProcess: "印刷机印刷", specs: [
+    { id: "checklist-menu", category: "menu", name: "勾选菜单", rate: 35, minimum: 40, tone: "lime", innerMaterial: "行标 128 克 / 157 克铜版纸", materialProcess: "印刷机印刷", quantityOptions: [500, 1000, 2000, 3000, 5000, 10000], specs: [
       { id: "a4", label: "A4｜20 × 28.5 cm左右", length: 0.285, width: 0.2 }, { id: "a3", label: "A3｜30 × 42 cm左右", length: 0.42, width: 0.3 },
     ] },
     { id: "multipart-form", category: "menu", name: "联单", rate: 32, minimum: 40, tone: "steel", innerMaterial: "80 克双胶纸", materialProcess: "印刷机印刷", specs: [
