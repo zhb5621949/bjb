@@ -42,7 +42,7 @@
     },
     {
       id: "deluxe-inner-nail-cookbook", category: "cookbook", name: "精装内钉菜谱", rate: 48, minimum: 50, tone: "steel",
-      shellMaterial: "① 硬质外壳皮革；② 硬质外壳覆哑膜；③ 软质皮革",
+      shellMaterial: "① 硬质纸面外壳；② 皮质外壳；③ 软质皮革外壳",
       innerMaterial: "250 克铜版纸双面亮膜",
       shellProcess: "雕刻 / 彩印 / UV 打印",
       materialProcess: "数码机器喷印画面",
@@ -50,7 +50,7 @@
     },
     {
       id: "deluxe-outer-nail-cookbook", category: "cookbook", name: "精装外钉菜谱", rate: 48, minimum: 50, tone: "gold",
-      shellMaterial: "① 硬质外壳皮革；② 硬质外壳覆哑膜；③ 软质皮革",
+      shellMaterial: "① 硬质纸面外壳；② 皮质外壳；③ 软质皮革外壳",
       innerMaterial: "250 克铜版纸双面亮膜",
       shellProcess: "雕刻 / 彩印 / UV 打印",
       materialProcess: "数码机器喷印画面",
@@ -167,10 +167,10 @@
       materialProcess: ["铜版纸包裹 PVC", "数码机器喷印"],
     },
     "deluxe-inner-nail-cookbook": {
-      shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
+      shellMaterial: ["硬质纸面外壳", "皮质外壳", "软质皮革外壳"],
     },
     "deluxe-outer-nail-cookbook": {
-      shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
+      shellMaterial: ["硬质纸面外壳", "皮质外壳", "软质皮革外壳"],
     },
     "butterfly-cookbook": {
       shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
