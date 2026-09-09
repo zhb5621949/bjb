@@ -391,6 +391,21 @@
     return priced;
   }
 
+  function photoAreaTierPrice(input) {
+    const totalArea = input.length * input.width * input.quantity;
+    if (totalArea < 10) return null;
+    const rate = totalArea >= 20 ? 10 : totalArea >= 15 ? 12 : 20;
+    return {
+      amount: totalArea * rate,
+      formula: `总面积${totalArea.toFixed(3)}㎡｜${totalArea >= 20 ? "20㎡及以上" : totalArea >= 15 ? "15㎡（含）至20㎡" : "10㎡（含）至15㎡"}：${rate}元/㎡ × ${totalArea.toFixed(3)}㎡`,
+      sourceReference: "老板设定的写真面积阶梯价",
+      sourceProduct: "写真阶梯价",
+      note: "10㎡以下继续按原报价表对应档位的最高价计算",
+      ruleType: "photoAreaTier",
+      tierRate: rate,
+    };
+  }
+
   function indoorLightPrice(input) {
     const area = input.length * input.width;
     if (area > 3) return result(area * input.quantity * 35, "price-105", `超过3㎡按35元/㎡ × ${area.toFixed(3)}㎡ × ${input.quantity}张`, "超过原表3㎡最高面积档，按原表最高平方米价顺延");
@@ -488,8 +503,8 @@
       case "laminated-menu": return laminatedMenuPrice(normalized);
       case "pvc-menu": return pvcMenuPrice(normalized);
       case "photo-menu":
+      case "photo-poster": return photoAreaTierPrice(normalized) || photoPrice(normalized);
       case "sticker-poster":
-      case "photo-poster":
       case "static-cling":
       case "one-way-vision":
       case "car-sticker":

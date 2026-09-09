@@ -195,8 +195,17 @@
       .filter(Boolean);
   }
 
+  const photoAreaTierProductIds = new Set(["photo-menu", "photo-poster"]);
+
   window.PRODUCT_CATALOG.forEach((product) => {
-    product.pricingMode = "originalHighest";
+    product.pricingMode = photoAreaTierProductIds.has(product.id) ? "photoAreaTier" : "originalHighest";
+    if (photoAreaTierProductIds.has(product.id)) {
+      product.areaPricingTiers = [
+        { min: 10, max: 15, rate: 20 },
+        { min: 15, max: 20, rate: 12 },
+        { min: 20, max: null, rate: 10 },
+      ];
+    }
     product.priceFactor = 100;
     product.quantityUnit = product.category === "cookbook" || product.id === "multipart-form"
       ? "本"

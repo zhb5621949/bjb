@@ -605,7 +605,7 @@
       result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
       isCookbook && hasShellProcess ? `外壳工艺：${shellProcessText}` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
-      result.sourcePricing && !isCookbook ? `原表最高价：${result.sourcePricing.formula}` : "",
+      result.sourcePricing && !isCookbook ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "写真阶梯价" : "原表最高价"}：${result.sourcePricing.formula}` : "",
       result.sourcePricing && result.priceFactor !== 100 ? `品类调价系数：${result.priceFactor}%` : "",
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
@@ -638,7 +638,7 @@
         (item) => `
           <button class="material-card ${item.id === state.productId ? "selected" : ""}" data-action="product" data-id="${attr(item.id)}">
             <span class="material-swatch ${attr(item.tone)}">${productImages[item.id]?.image ? `<img src="${attr(productImages[item.id].image)}" alt="${attr(item.name)}实物图" loading="lazy">` : `<b>${escapeHtml(item.name.slice(0, 1))}</b>`}</span>
-            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "originalHighest" ? `原表最高价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
+            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "originalHighest" ? `原表最高价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "photoAreaTier" ? `10㎡起写真阶梯价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
             <i>✓</i>
           </button>`,
       )
@@ -728,7 +728,7 @@
           ${isCookbook && hasShellProcess ? `<div class="shell-process-result"><dt>外壳工艺</dt><dd>${escapeHtml(shellProcessText)}</dd></div>` : ""}
           ${!isCookbook ? `<div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
-          ${result.sourcePricing ? `${!isCookbook ? `<div><dt>原表最高价规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
+          ${result.sourcePricing ? `${!isCookbook ? `<div><dt>${result.sourcePricing.ruleType === "photoAreaTier" ? "写真阶梯价规则" : "原表最高价规则"}</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
           ${!isCookbook ? `<div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.tierUnitPrice !== null ? `<div><dt>每本阶梯单价</dt><dd>${money(result.tierUnitPrice)} × ${result.quantity} 本</dd></div>` : ""}
           ${!isCookbook ? `<div><dt>${result.tierUnitPrice !== null ? "菜谱本基础费" : "品类基础费"}</dt><dd>${money(result.materialCost)}</dd></div>` : ""}
@@ -740,7 +740,7 @@
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">${isCookbook ? "报价按所选规格、内页张数和本数计算，最终价格以确认文件和生产要求为准。" : result.sourcePricing ? `计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
+        <p class="calculation-note">${isCookbook ? "报价按所选规格、内页张数和本数计算，最终价格以确认文件和生产要求为准。" : result.sourcePricing ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "计算公式：总面积 × 当前写真阶梯单价 × 品类调价系数，再与最低价比较并向上取整。" : "计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。"}${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
     })();
     return `<div class="result-column">${productShowcase()}${quotePanel}</div>`;
@@ -831,7 +831,7 @@
             <label class="${state.minimumMode === "50" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="50" ${state.minimumMode === "50" ? "checked" : ""}><b>最低 50 元</b></label>
             <label class="${state.minimumMode === "custom" ? "selected" : ""} custom-minimum"><input type="radio" name="minimum" data-minimum="custom" ${state.minimumMode === "custom" ? "checked" : ""}><b>自定义</b><input type="number" min="0" data-field="custom-minimum" value="${attr(state.customMinimum)}"><small>元</small></label>
           </div></div>
-          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${currentProduct.pricingMode === "originalHighest" ? `按原表最高价 · 系数${num(currentProduct.priceFactor, 100)}%` : isBookTierPricing ? "按每本阶梯单价" : `${money(currentProduct.rate)}/㎡`}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
+          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${currentProduct.pricingMode === "originalHighest" ? `按原表最高价 · 系数${num(currentProduct.priceFactor, 100)}%` : currentProduct.pricingMode === "photoAreaTier" ? `10㎡起按20/12/10元阶梯计价 · 系数${num(currentProduct.priceFactor, 100)}%` : isBookTierPricing ? "按每本阶梯单价" : `${money(currentProduct.rate)}/㎡`}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
         </div>
         ${resultPanel(latestResult)}
       </section>`;
