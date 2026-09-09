@@ -312,7 +312,8 @@
     let unitPrice = highestAt(item, [5, 6]);
     if (unitPrice === null) return null;
     if (input.quantity <= 50) unitPrice += 1.5;
-    return result(unitPrice * input.quantity, item, `${input.quantity <= 50 ? "50本及以下" : "100本常规档"}：每本${unitPrice}元 × ${input.quantity}本`);
+    const amount = Math.round(unitPrice * input.quantity * 100) / 100;
+    return result(amount, item, `${input.quantity <= 50 ? "50本及以下" : "100本常规档"}：每本${unitPrice}元 × ${input.quantity}本`);
   }
 
   function tableSignPrice(input) {

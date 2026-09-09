@@ -841,7 +841,7 @@
     const usesOriginalPricing = currentProduct.pricingMode === "originalHighest";
     const quantityLabel = currentProduct.category === "cookbook" ? "菜谱本数量（本）" : currentProduct.id === "table-sign-menu" ? "总数量（个）" : currentProduct.id === "multipart-form" ? "总数量（本）" : "总数量（张）";
     const quantityControl = currentProduct.quantityOptions?.length
-      ? `<select data-field="quantity" aria-label="${attr(quantityLabel)}">${currentProduct.quantityOptions.map((quantity) => `<option value="${quantity}" ${String(quantity) === String(state.quantity) ? "selected" : ""}>${quantity === 10000 ? "1万" : quantity} 张</option>`).join("")}</select>`
+      ? `<select data-field="quantity" aria-label="${attr(quantityLabel)}">${currentProduct.quantityOptions.map((quantity) => `<option value="${quantity}" ${String(quantity) === String(state.quantity) ? "selected" : ""}>${quantity === 10000 ? "1万" : quantity} ${escapeHtml(currentProduct.quantityUnit || "张")}</option>`).join("")}</select>`
       : `<input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}">`;
     latestResult = state.resultVisible ? calculate() : null;
     return `

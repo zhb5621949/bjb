@@ -116,7 +116,7 @@
     { id: "checklist-menu", category: "menu", name: "勾选菜单", rate: 35, minimum: 40, tone: "lime", innerMaterial: "行标 128 克 / 157 克铜版纸", materialProcess: "印刷机印刷", quantityOptions: [500, 1000, 2000, 3000, 5000, 10000], specs: [
       { id: "a4", label: "A4｜20 × 28.5 cm左右", length: 0.285, width: 0.2 }, { id: "a3", label: "A3｜30 × 42 cm左右", length: 0.42, width: 0.3 },
     ] },
-    { id: "multipart-form", category: "menu", name: "联单", rate: 32, minimum: 40, tone: "steel", innerMaterial: "80 克双胶纸", materialProcess: "印刷机印刷", specs: [
+    { id: "multipart-form", category: "menu", name: "联单", rate: 32, minimum: 40, tone: "steel", innerMaterial: "80 克双胶纸", materialProcess: "印刷机印刷", quantityOptions: [100, 200], specs: [
       { id: "10x14", label: "10 × 14 cm", length: 0.14, width: 0.1 }, { id: "14x21", label: "14 × 21 cm", length: 0.21, width: 0.14 }, { id: "21x28-5", label: "21 × 28.5 cm", length: 0.285, width: 0.21 },
     ] },
     { id: "indoor-light-film-menu", category: "menu", name: "室内灯片菜单", rate: 45, minimum: 50, tone: "amber", innerMaterial: "室内灯片材料", materialProcess: "写真机印刷", specs: [
