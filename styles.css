@@ -1254,6 +1254,12 @@ button {
   font-weight: 800;
 }
 
+.breakdown .surcharge-row dt,
+.breakdown .surcharge-row dd {
+  color: #9a5200;
+  font-weight: 800;
+}
+
 .breakdown .shell-process-result {
   min-height: 38px;
   padding: 0 9px;

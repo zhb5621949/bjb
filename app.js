@@ -541,7 +541,12 @@
       && selectedOptions.some((item) => item.groupId === "shell-material" && item.name === "硬质纸面外壳")
         ? quantity * 5
         : 0;
-    const raw = Math.max(0, materialCost + extraInnerPageCost + styleCost + optionCost - hardPaperShellDiscount);
+    const shellProcesses = new Set(selectedOptions.filter((item) => item.groupId === "shell-process").map((item) => item.name));
+    const combinedCoverProcessCost =
+      currentProduct.category === "cookbook" && shellProcesses.has("雕刻") && shellProcesses.has("彩印")
+        ? quantity * 10
+        : 0;
+    const raw = Math.max(0, materialCost + extraInnerPageCost + styleCost + optionCost + combinedCoverProcessCost - hardPaperShellDiscount);
     const floor =
       state.minimumMode === "material"
         ? num(currentProduct.minimum, 40)
@@ -573,6 +578,7 @@
       styleCost,
       optionCost,
       hardPaperShellDiscount,
+      combinedCoverProcessCost,
       raw,
       floor,
       final,
@@ -633,6 +639,7 @@
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
       result.hardPaperShellDiscount ? `硬质纸面外壳优惠：-${money(result.hardPaperShellDiscount)}（每本减 ${money(5)}）` : "",
+      result.combinedCoverProcessCost ? `封面雕刻+彩印工艺费：${money(result.combinedCoverProcessCost)}（${result.quantity}本 × ${money(10)}）` : "",
       `材料/工艺：${optionText}`,
       `报价：${money(result.final)}（每${quantityUnit}约 ${money(result.unit)}）`,
       result.sourcePricing ? `价格来源：${result.sourcePricing.sourceReference}${result.sourcePricing.note ? `；${result.sourcePricing.note}` : ""}` : "",
@@ -759,13 +766,14 @@
           ${result.tierUnitPrice !== null ? `<div><dt>包含内页</dt><dd>${result.includedInnerPages} 张及以下</dd></div>` : ""}
           ${result.extraInnerPages ? `<div><dt>另加内页</dt><dd>${result.extraInnerPages} 张 × ${result.quantity} 本 × ${money(result.product.bookPricing.extraInnerPagePrice)} = ${money(result.extraInnerPageCost)}</dd></div>` : ""}
           ${result.hardPaperShellDiscount ? `<div class="discount-row"><dt>硬质纸面外壳优惠</dt><dd>-${money(result.hardPaperShellDiscount)}（${result.quantity} 本 × ${money(5)}）</dd></div>` : ""}
+          ${result.combinedCoverProcessCost ? `<div class="surcharge-row"><dt>封面雕刻+彩印</dt><dd>${money(result.combinedCoverProcessCost)}（${result.quantity} 本 × ${money(10)}）</dd></div>` : ""}
           <div><dt>材料/工艺加价</dt><dd>${money(result.optionCost)}</dd></div>
           <div><dt>款式/设计</dt><dd>${money(result.styleCost)}</dd></div>
           <div class="raw-total"><dt>计算原价</dt><dd>${money(result.raw)}</dd></div>
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">${isCookbook ? `报价按所选规格、内页张数和本数计算。${result.hardPaperShellDiscount ? "硬质纸面外壳按皮质外壳价格每本减 5 元。" : ""}最终价格以确认文件和生产要求为准。` : result.sourcePricing ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "计算公式：总面积 × 当前写真阶梯单价 × 品类调价系数，再与最低价比较并向上取整。" : "计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。"}${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
+        <p class="calculation-note">${isCookbook ? `报价按所选规格、内页张数和本数计算。${result.hardPaperShellDiscount ? "硬质纸面外壳按皮质外壳价格每本减 5 元。" : ""}${result.combinedCoverProcessCost ? "封面同时选择雕刻和彩印时，每本另加 10 元工艺费。" : ""}最终价格以确认文件和生产要求为准。` : result.sourcePricing ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "计算公式：总面积 × 当前写真阶梯单价 × 品类调价系数，再与最低价比较并向上取整。" : "计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。"}${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
     })();
     return `<div class="result-column">${productShowcase()}${quotePanel}</div>`;
