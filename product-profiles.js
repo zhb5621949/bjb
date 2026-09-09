@@ -5,8 +5,6 @@ window.PRODUCT_PROFILES = {
   "butterfly-cookbook": { features: "内页可接近180度平展，连续画面展示自然，翻阅顺畅。", uses: "适合重视图片展示的酒店菜谱、婚宴菜谱和品牌餐厅菜单。" },
   "spiral-cookbook": { features: "线圈装订可完全翻折，轻便实用，页数选择灵活。", uses: "适合小吃店、饮品店、快餐店及更新较频繁的常用菜谱。" },
   "laminated-spiral-cookbook": { features: "内页经过塑封并配线圈装订，防水耐污，容易擦拭。", uses: "适合火锅店、烧烤店、夜宵店及桌面容易接触油水的场景。" },
-  "saddle-album-cookbook": { features: "骑马钉装订轻薄，翻阅方便，页数较少时成本更合适。", uses: "适合季节菜单、活动菜单、简餐价目册和短期宣传画册。" },
-  "perfect-album-cookbook": { features: "书脊平整，整体像正式书刊，适合较多页数的连续内容。", uses: "适合品牌菜谱、产品目录、招商画册和内容较多的菜单。" },
   "additional-inner-pages": { features: "可按现有菜谱规格单独补做内页，支持PVC或覆膜铜版纸。", uses: "适合菜品新增、价格更新、旧页损坏后的替换与增补。" },
   "laminated-menu": { features: "铜版纸印刷后使用12丝过塑膜塑封，防水耐污，价格实惠。", uses: "适合快餐店、小吃店、早餐店、食堂及桌面点餐菜单。" },
   "pvc-menu": { features: "PVC硬片结实耐折、防水，可双面印刷，画面清晰。", uses: "适合奶茶店、餐饮店、酒吧价目表及需要长期反复使用的菜单。" },

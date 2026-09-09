@@ -1,5 +1,5 @@
 {
-  "version": 25,
+  "version": 26,
   "updatedAt": "2026-08-13T12:00:00+08:00",
   "note": "以20241025完整报价表为主，合并原表同档最高价；产品卡片使用完整表内分类实物图，管理端可按品类调整原表价系数",
   "styleFeeDefault": 10,
@@ -97,24 +97,6 @@
       "rate": 50,
       "minimum": 40,
       "tone": "cyan",
-      "priceFactor": 100
-    },
-    {
-      "id": "saddle-album-cookbook",
-      "category": "cookbook",
-      "name": "骑马钉画册菜谱",
-      "rate": 42,
-      "minimum": 50,
-      "tone": "coral",
-      "priceFactor": 100
-    },
-    {
-      "id": "perfect-album-cookbook",
-      "category": "cookbook",
-      "name": "胶装画册菜谱",
-      "rate": 48,
-      "minimum": 50,
-      "tone": "canvas",
       "priceFactor": 100
     },
     {

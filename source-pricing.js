@@ -12,14 +12,10 @@
     "butterfly-cookbook": "蝴蝶装 皮面雕刻/皮面印刷",
     "spiral-cookbook": "线圈 菜谱本",
     "laminated-spiral-cookbook": "塑封 菜谱本",
-    "saddle-album-cookbook": "精装书本 内钉皮质",
-    "perfect-album-cookbook": "精装书本 内钉皮质",
   };
 
   const proxyNotes = {
     "deluxe-outer-nail-cookbook": "原表没有外钉独立价格，按精装内钉的最高价计算",
-    "saddle-album-cookbook": "原表没有骑马钉画册独立价格，按精装内钉的最高价计算",
-    "perfect-album-cookbook": "原表没有胶装画册独立价格，按精装内钉的最高价计算",
     "photo-menu": "写真菜单按原表写真墙贴海报的最高价计算",
     "flyer": "原表没有普通宣传单独立价格，按同规格157克勾选菜单最高价计算",
     "business-card": "普通名片按原表9×5.4厘米卡片的最高价计算",

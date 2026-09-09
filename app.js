@@ -29,8 +29,6 @@
     { id: "laminated-cookbook", category: "cookbook", name: "过塑菜谱本", rate: 50, minimum: 40, tone: "cyan" },
     { id: "coated-paper-inner-menu", category: "cookbook", name: "铜版纸内页菜单", rate: 38, minimum: 40, tone: "sand" },
     { id: "cookbook-cover", category: "cookbook", name: "菜谱外壳", rate: 65, minimum: 50, tone: "gold" },
-    { id: "saddle-stitched-album", category: "cookbook", name: "骑马钉画册", rate: 42, minimum: 50, tone: "coral" },
-    { id: "perfect-bound-album", category: "cookbook", name: "胶装画册", rate: 48, minimum: 50, tone: "canvas" },
 
     { id: "laminated-menu", category: "menu", name: "塑封菜单", rate: 45, minimum: 40, tone: "mint" },
     { id: "pvc-menu", category: "menu", name: "PVC菜单", rate: 68, minimum: 50, tone: "ice" },

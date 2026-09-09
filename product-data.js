@@ -6,11 +6,6 @@
     { id: "large", label: "大号｜25 × 36 cm", length: 0.36, width: 0.25 },
     { id: "a3", label: "A3｜29.7 × 42 cm", length: 0.42, width: 0.297 },
   ];
-  const albumSpecs = [
-    { id: "a4", label: "A4｜20 × 28.5 cm左右", length: 0.285, width: 0.2 },
-    { id: "a5", label: "A5｜14 × 20 cm左右", length: 0.2, width: 0.14 },
-    { id: "custom", label: "定制尺寸", custom: true },
-  ];
   const customSpec = [{ id: "custom", label: "定制尺寸", custom: true }];
   const posterSpecs = [
     { id: "30x50", label: "30 × 50 cm", length: 0.5, width: 0.3 },
@@ -79,22 +74,6 @@
       shellProcess: "彩印",
       materialProcess: "数码机器印刷",
       specs: aSeriesBook,
-    },
-    {
-      id: "saddle-album-cookbook", category: "cookbook", name: "骑马钉画册菜谱", rate: 42, minimum: 50, tone: "coral",
-      shellMaterial: "无外壳；封面 300 克，内页 200 克铜版纸覆膜",
-      innerMaterial: "200 克铜版纸亮膜或哑膜",
-      shellProcess: "无外壳",
-      materialProcess: "数码机器印刷",
-      specs: albumSpecs,
-    },
-    {
-      id: "perfect-album-cookbook", category: "cookbook", name: "胶装画册菜谱", rate: 48, minimum: 50, tone: "canvas",
-      shellMaterial: "无外壳；封面 300 克，内页 200 克铜版纸覆膜",
-      innerMaterial: "200 克铜版纸亮膜或哑膜",
-      shellProcess: "无外壳",
-      materialProcess: "数码机器印刷",
-      specs: albumSpecs,
     },
     {
       id: "additional-inner-pages", category: "cookbook", name: "另加内页", rate: 38, minimum: 40, tone: "sand",

@@ -5,8 +5,6 @@ window.PRODUCT_IMAGES = {
   "butterfly-cookbook": { image: "images/product-originals/butterfly-cookbook.jpg" },
   "spiral-cookbook": { image: "images/product-originals/spiral-cookbook.jpg" },
   "laminated-spiral-cookbook": { image: "images/product-originals/laminated-spiral-cookbook.jpg" },
-  "saddle-album-cookbook": { image: "images/product-originals/saddle-album-cookbook.jpg" },
-  "perfect-album-cookbook": { image: "images/product-originals/perfect-album-cookbook.png" },
   "additional-inner-pages": { image: "images/product-originals/additional-inner-pages.jpg" },
 
   "laminated-menu": { image: "images/product-originals/laminated-menu.jpg" },
