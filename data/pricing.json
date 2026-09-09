@@ -1,7 +1,7 @@
 {
-  "version": 28,
-  "updatedAt": "2026-09-09T11:03:26+08:00",
-  "note": "V28：不干胶海报按新Excel固定规格数量价格计算，区间取最高价；室内灯片总面积4平方米及以上按30元/平方米",
+  "version": 29,
+  "updatedAt": "2026-09-09T16:04:56+08:00",
+  "note": "V29：修复尺寸输入值与长边、短边单位标签重叠；价格规则保持V28不变",
   "styleFeeDefault": 10,
   "cookbookDesignFeePerStyle": 100,
   "categories": [
