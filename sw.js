@@ -1,4 +1,4 @@
-const CACHE_NAME = "photo-pricing-shell-v26";
+const CACHE_NAME = "photo-pricing-shell-v27";
 const APP_SHELL = [
   "./",
   "./index.html",
