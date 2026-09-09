@@ -824,6 +824,13 @@ button {
   padding: 0 40px 0 12px;
 }
 
+.quantity-grid input[readonly] {
+  color: #755a00;
+  background: #fff8cf;
+  border-color: #efd76a;
+  font-weight: 800;
+}
+
 .quantity-grid label > i {
   position: absolute;
   top: 50%;
