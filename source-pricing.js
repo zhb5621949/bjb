@@ -19,7 +19,7 @@
     "photo-menu": "写真菜单按原表写真墙贴海报的最高价计算",
     "flyer": "原表没有普通宣传单独立价格，按同规格157克勾选菜单最高价计算",
     "business-card": "普通名片按原表9×5.4厘米卡片的最高价计算",
-    "sticker-poster": "不干胶海报按原表写真墙贴海报的最高价计算",
+    "sticker-poster": "不干胶海报按新价格表的固定规格与数量计算",
     "static-cling": "原表没有静电贴独立价格，按写真墙贴海报最高价计算",
     "one-way-vision": "原表没有单透贴独立价格，按写真墙贴海报最高价计算",
     "car-sticker": "原表没有车贴独立价格，按写真墙贴海报最高价计算",
@@ -92,6 +92,37 @@
       sourceReference: sourceReference(item),
       sourceProduct: item?.product || "原报价表",
       note,
+    };
+  }
+
+  const stickerPosterPrices = {
+    "9x5-4": { label: "9×5.4厘米", prices: { 500: 50, 1000: 60, 2000: 105, 3000: 130, 5000: 180, 10000: 300, 20000: 800 } },
+    "9x11": { label: "9×11厘米", prices: { 200: 90, 500: 90, 1000: 120, 2000: 180, 3000: 280, 5000: 460, 10000: 680, 20000: 1300 } },
+    "10x15": { label: "10×15厘米", prices: { 200: 140, 500: 140, 1000: 160, 2000: 260, 3000: 420, 5000: 600, 10000: 1100, 20000: 2200 } },
+    "14x21": { label: "14×21厘米", prices: { 200: 220, 500: 220, 1000: 280, 2000: 450, 3000: 650, 5000: 1100, 10000: 2000 } },
+    "a4-21x28-5": { label: "A4（21×28.5厘米）", prices: { 1000: 260, 2000: 480, 3000: 720, 5000: 1200, 10000: 2200 }, lamination: { 1000: 100, 2000: 100, 3000: 150, 5000: 200, 10000: 500 } },
+    "a3-28-5x42": { label: "A3（28.5×42厘米）", prices: { 500: 380, 1000: 500, 2000: 980, 3000: 1500, 5000: 2200, 10000: 4200 }, lamination: { 500: 100, 1000: 150, 2000: 150, 3000: 300, 5000: 500, 10000: 800 } },
+    "42x57": { label: "42×57厘米", prices: { 100: 680, 200: 740, 500: 820, 1000: 1200, 2000: 2000, 3000: 2800, 5000: 4800 }, lamination: { 100: 50, 200: 50, 500: 150, 1000: 300, 2000: 400, 3000: 500, 5000: 800 } },
+    "57x85": { label: "57×85厘米", prices: { 100: 820, 200: 990, 500: 1500, 1000: 2200, 2000: 3800, 3000: 5500, 5000: 9900 }, lamination: { 100: 50, 200: 100, 500: 400, 1000: 500, 2000: 800, 3000: 900, 5000: 1200 } },
+    "85x115": { label: "85×115厘米", prices: { 100: 1200, 200: 1800 }, lamination: { 100: 100, 200: 200 } },
+  };
+
+  function stickerPosterPrice(input) {
+    const spec = stickerPosterPrices[input.specId];
+    const baseAmount = Number(spec?.prices?.[input.quantity]);
+    if (!Number.isFinite(baseAmount)) return null;
+    const laminated = input.optionNames.includes("覆膜");
+    const laminationFee = laminated ? Number(spec?.lamination?.[input.quantity]) : 0;
+    if (laminated && !Number.isFinite(laminationFee)) return null;
+    return {
+      amount: baseAmount + laminationFee,
+      formula: `${spec.label}｜${input.quantity}张：${baseAmount}元${laminated ? ` + 覆膜${laminationFee}元` : ""}`,
+      sourceReference: "《不干胶海报的价格.xls》价格参考表",
+      sourceProduct: "不干胶 / 不干胶海报",
+      note: "价格区间按最高价计取；只开放表内有报价的规格与数量组合",
+      ruleType: "stickerTable",
+      baseAmount,
+      laminationFee,
     };
   }
 
@@ -403,7 +434,19 @@
     };
   }
 
-  function indoorLightPrice(input) {
+  function indoorLightPrice(input, useOwnerAreaTier = false) {
+    const totalArea = input.length * input.width * input.quantity;
+    if (useOwnerAreaTier && totalArea >= 4) {
+      return {
+        amount: totalArea * 30,
+        formula: `总面积${totalArea.toFixed(3)}㎡｜4㎡及以上：30元/㎡ × ${totalArea.toFixed(3)}㎡`,
+        sourceReference: "老板设定的室内灯片面积价",
+        sourceProduct: "室内灯片",
+        note: "总面积不足4㎡时继续按原报价表对应档位的最高价计算",
+        ruleType: "indoorLightTier",
+        tierRate: 30,
+      };
+    }
     const area = input.length * input.width;
     if (area > 3) return result(area * input.quantity * 35, "price-105", `超过3㎡按35元/㎡ × ${area.toFixed(3)}㎡ × ${input.quantity}张`, "超过原表3㎡最高面积档，按原表最高平方米价顺延");
     const different = input.styles >= input.quantity;
@@ -501,14 +544,14 @@
       case "pvc-menu": return pvcMenuPrice(normalized);
       case "photo-menu":
       case "photo-poster": return photoAreaTierPrice(normalized) || photoPrice(normalized);
-      case "sticker-poster":
+      case "sticker-poster": return stickerPosterPrice(normalized);
       case "static-cling":
       case "one-way-vision":
       case "car-sticker":
       case "glass-lettering": return photoPrice(normalized);
       case "photo-paper-menu":
-      case "indoor-light-film-menu":
-      case "indoor-light-film": return indoorLightPrice(normalized);
+      case "indoor-light-film-menu": return indoorLightPrice(normalized);
+      case "indoor-light-film": return indoorLightPrice(normalized, true);
       case "checklist-menu":
       case "flyer": return checklistPrice(normalized);
       case "multipart-form": return multipartPrice(normalized);

@@ -191,8 +191,9 @@
       const savedSpec = selectedProduct.specs?.find((item) => item.id === saved.specId);
       const selectedSpec = savedSpec || selectedProduct.specs?.[0];
       const savedQuantity = Math.max(1, Math.floor(num(saved.quantity, 1)));
-      const normalizedQuantity = selectedProduct.quantityOptions?.length
-        ? (selectedProduct.quantityOptions.includes(savedQuantity) ? savedQuantity : selectedProduct.quantityOptions[0])
+      const selectedQuantityOptions = quantityOptionsFor(selectedProduct, selectedSpec);
+      const normalizedQuantity = selectedQuantityOptions.length
+        ? (selectedQuantityOptions.includes(savedQuantity) ? savedQuantity : selectedQuantityOptions[0])
         : savedQuantity;
       return {
         ...freshState(),
@@ -469,6 +470,34 @@
     return product().specs?.find((item) => item.id === state.specId) || null;
   }
 
+  function quantityOptionsFor(selectedProduct = product(), selectedSpec = currentSpec()) {
+    if (selectedSpec?.quantityOptions?.length) return selectedSpec.quantityOptions;
+    return selectedProduct.quantityOptions?.length ? selectedProduct.quantityOptions : [];
+  }
+
+  function pricingModeSummary(item) {
+    if (item.pricingMode === "originalHighest") return `原表最高价 · 系数${num(item.priceFactor, 100)}%`;
+    if (item.pricingMode === "photoAreaTier") return `10㎡起写真阶梯价 · 系数${num(item.priceFactor, 100)}%`;
+    if (item.pricingMode === "stickerTable") return `按Excel固定规格数量价 · 系数${num(item.priceFactor, 100)}%`;
+    if (item.pricingMode === "indoorLightTier") return `总面积4㎡起30元/㎡ · 系数${num(item.priceFactor, 100)}%`;
+    if (item.pricingMode === "perBookTier") return "按本数与规格阶梯计价";
+    return `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`;
+  }
+
+  function sourceRuleName(sourcePricing) {
+    if (sourcePricing?.ruleType === "photoAreaTier") return "写真阶梯价";
+    if (sourcePricing?.ruleType === "stickerTable") return "不干胶价格表";
+    if (sourcePricing?.ruleType === "indoorLightTier") return "室内灯片面积价";
+    return "原表最高价";
+  }
+
+  function sourceCalculationText(sourcePricing) {
+    if (sourcePricing?.ruleType === "photoAreaTier") return "计算公式：总面积 × 当前写真阶梯单价 × 品类调价系数，再与最低价比较并向上取整。";
+    if (sourcePricing?.ruleType === "stickerTable") return "计算公式：Excel固定规格数量价 + 对应覆膜费，再乘品类调价系数，并与最低价比较。";
+    if (sourcePricing?.ruleType === "indoorLightTier") return "计算公式：总面积 × 30元/㎡ × 品类调价系数，再与最低价比较并向上取整。";
+    return "计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。";
+  }
+
   function selectProduct(productId) {
     const selectedProduct = settings.products.find((item) => item.id === productId) || settings.products[0];
     const firstSpec = selectedProduct.specs?.[0];
@@ -477,7 +506,8 @@
     state.specId = firstSpec?.id || "";
     state.length = firstSpec?.length ? String(centimetres(firstSpec.length)) : "";
     state.width = firstSpec?.width ? String(centimetres(firstSpec.width)) : "";
-    if (selectedProduct.quantityOptions?.length) state.quantity = String(selectedProduct.quantityOptions[0]);
+    const quantityOptions = quantityOptionsFor(selectedProduct, firstSpec);
+    if (quantityOptions.length) state.quantity = String(quantityOptions[0]);
     state.innerPages = "";
     state.productOptions = optionStateFor(selectedProduct);
     state.galleryIndex = 0;
@@ -508,8 +538,9 @@
     const length = lengthCm / 100;
     const width = widthCm / 100;
     const requestedQuantity = Math.max(1, Math.floor(num(state.quantity, 1)));
-    const quantity = currentProduct.quantityOptions?.length
-      ? (currentProduct.quantityOptions.includes(requestedQuantity) ? requestedQuantity : currentProduct.quantityOptions[0])
+    const quantityOptions = quantityOptionsFor(currentProduct, currentSpec());
+    const quantity = quantityOptions.length
+      ? (quantityOptions.includes(requestedQuantity) ? requestedQuantity : quantityOptions[0])
       : requestedQuantity;
     const styles = Math.max(1, Math.floor(num(state.styles, 1)));
     const innerPages = currentProduct.category === "cookbook" ? Math.max(0, Math.floor(num(state.innerPages))) : 0;
@@ -531,6 +562,7 @@
           optionNames: selectedOptions.map((item) => item.name),
         })
       : null;
+    if (currentProduct.fixedSpecPricing && !sourcePricing) return null;
     const priceFactor = Math.max(0, num(currentProduct.priceFactor, 100));
     const sourceAmount = sourcePricing ? sourcePricing.amount * priceFactor / 100 : null;
     const tierUnitPrice = currentProduct.pricingMode === "perBookTier" ? bookTierUnitPrice(currentProduct, state.specId, quantity) : null;
@@ -645,7 +677,7 @@
       result.product.category === "cookbook" ? `内页：${result.innerPages}张（${result.innerPages * 2}页）` : "",
       isCookbook && hasShellProcess ? `外壳工艺：${shellProcessText}` : "",
       `数量：${result.quantity}${quantityUnit}｜款数：${result.styles}款`,
-      result.sourcePricing && !isCookbook ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "写真阶梯价" : "原表最高价"}：${result.sourcePricing.formula}` : "",
+      result.sourcePricing && !isCookbook ? `${sourceRuleName(result.sourcePricing)}：${result.sourcePricing.formula}` : "",
       result.sourcePricing && result.priceFactor !== 100 ? `品类调价系数：${result.priceFactor}%` : "",
       result.tierUnitPrice !== null ? `每本阶梯单价：${money(result.tierUnitPrice)}（含${result.includedInnerPages}张内页）` : "",
       result.extraInnerPages ? `超出内页：${result.extraInnerPages}张 × ${result.quantity}本 × ${money(result.product.bookPricing.extraInnerPagePrice)}＝${money(result.extraInnerPageCost)}` : "",
@@ -681,7 +713,7 @@
         (item) => `
           <button class="material-card ${item.id === state.productId ? "selected" : ""}" data-action="product" data-id="${attr(item.id)}">
             <span class="material-swatch ${attr(item.tone)}">${productImages[item.id]?.image ? `<img src="${attr(productImages[item.id].image)}" alt="${attr(item.name)}实物图" loading="lazy">` : `<b>${escapeHtml(item.name.slice(0, 1))}</b>`}</span>
-            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${item.pricingMode === "originalHighest" ? `原表最高价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "photoAreaTier" ? `10㎡起写真阶梯价 · 系数${num(item.priceFactor, 100)}%` : item.pricingMode === "perBookTier" ? "按本数与规格阶梯计价" : `${money(item.rate)}/㎡ · 起步${money(item.minimum)}`}</small></span>
+            <span class="material-copy"><strong>${escapeHtml(item.name)}</strong><small>${pricingModeSummary(item)}</small></span>
             <i>✓</i>
           </button>`,
       )
@@ -694,7 +726,7 @@
       <div class="parameter-row specification-row">
         <div class="row-label">产品规格</div>
         <div class="specification-panel">
-          <div class="specification-heading"><b>选择常用尺寸</b><small>点击规格会自动填写长宽；定制尺寸请手动输入</small></div>
+          <div class="specification-heading"><b>${currentProduct.fixedSpecPricing ? "选择价格表规格" : "选择常用尺寸"}</b><small>${currentProduct.fixedSpecPricing ? "每个规格只显示价格表中已有报价的数量" : "点击规格会自动填写长宽；定制尺寸请手动输入"}</small></div>
           <div class="spec-preset-list">
             ${(currentProduct.specs || []).map((spec) => `<button class="spec-preset ${spec.id === state.specId ? "selected" : ""}" data-action="spec" data-id="${attr(spec.id)}"><b>${escapeHtml(spec.label)}</b>${spec.custom ? "<small>手动输入（厘米）</small>" : `<small>${centimetres(spec.length)}cm × ${centimetres(spec.width)}cm</small>`}</button>`).join("")}
           </div>
@@ -771,7 +803,7 @@
           ${isCookbook && hasShellProcess ? `<div class="shell-process-result"><dt>外壳工艺</dt><dd>${escapeHtml(shellProcessText)}</dd></div>` : ""}
           ${!isCookbook ? `<div><dt>${result.product.multiplyByInnerPages ? "单页面积" : "单张面积"}</dt><dd>${result.areaEach.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.product.multiplyByInnerPages ? `<div><dt>计价页数</dt><dd>${result.innerPages} 页 × ${result.quantity} 本</dd></div>` : ""}
-          ${result.sourcePricing ? `${!isCookbook ? `<div><dt>${result.sourcePricing.ruleType === "photoAreaTier" ? "写真阶梯价规则" : "原表最高价规则"}</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
+          ${result.sourcePricing ? `${!isCookbook ? `<div><dt>${sourceRuleName(result.sourcePricing)}规则</dt><dd>${escapeHtml(result.sourcePricing.formula)}</dd></div>` : ""}<div><dt>价格来源</dt><dd>${escapeHtml(result.sourcePricing.sourceReference)}</dd></div>${result.priceFactor !== 100 ? `<div><dt>品类调价系数</dt><dd>${result.priceFactor}%</dd></div>` : ""}` : ""}
           ${!isCookbook ? `<div><dt>总面积</dt><dd>${result.totalArea.toFixed(3)} ㎡</dd></div>` : ""}
           ${result.tierUnitPrice !== null ? `<div><dt>每本阶梯单价</dt><dd>${money(result.tierUnitPrice)} × ${result.quantity} 本</dd></div>` : ""}
           ${!isCookbook ? `<div><dt>${result.tierUnitPrice !== null ? "菜谱本基础费" : "品类基础费"}</dt><dd>${money(result.materialCost)}</dd></div>` : ""}
@@ -785,7 +817,7 @@
         </dl>
         <div class="selected-processes"><b>已选材料与工艺</b><p>${result.options.map((item) => `${escapeHtml(item.groupName)}：${escapeHtml(item.name)}`).join("；") || "未选择"}</p></div>
         <div class="result-actions"><button class="primary" data-action="copy-result">复制报价</button><button class="secondary" data-action="print">打印</button></div>
-        <p class="calculation-note">${isCookbook ? `报价按所选规格、内页张数和本数计算。${result.chargesCookbookDesign ? `首款设计已包含，从第 2 款起每增加一款另加 ${money(result.styleUnitFee)} 设计费。` : ""}${result.hardPaperShellDiscount ? "硬质纸面外壳按皮质外壳价格每本减 5 元。" : ""}${result.combinedCoverProcessCost ? "封面同时选择雕刻和彩印时，每本另加 10 元工艺费。" : ""}最终价格以确认文件和生产要求为准。` : result.sourcePricing ? `${result.sourcePricing.ruleType === "photoAreaTier" ? "计算公式：总面积 × 当前写真阶梯单价 × 品类调价系数，再与最低价比较并向上取整。" : "计算公式：原表对应档位的最高价 × 品类调价系数，再与最低价比较并向上取整。"}${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
+        <p class="calculation-note">${isCookbook ? `报价按所选规格、内页张数和本数计算。${result.chargesCookbookDesign ? `首款设计已包含，从第 2 款起每增加一款另加 ${money(result.styleUnitFee)} 设计费。` : ""}${result.hardPaperShellDiscount ? "硬质纸面外壳按皮质外壳价格每本减 5 元。" : ""}${result.combinedCoverProcessCost ? "封面同时选择雕刻和彩印时，每本另加 10 元工艺费。" : ""}最终价格以确认文件和生产要求为准。` : result.sourcePricing ? `${sourceCalculationText(result.sourcePricing)}${result.sourcePricing.note ? `说明：${escapeHtml(result.sourcePricing.note)}。` : ""}` : result.tierUnitPrice !== null ? `计算公式：每本阶梯单价 × 本数 + 超出 ${result.includedInnerPages} 张的内页数量 × 本数 × ${money(result.product.bookPricing.extraInnerPagePrice)} + 材料/工艺加价 + 款式费。` : result.product.multiplyByInnerPages ? "计算公式：单页面积 × 内页数量 × 菜谱本数量 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。" : "计算公式：面积 × 品类单价 + 材料/工艺加价 + 款式费，再与最低价比较并向上取整。"}</p>
       </aside>`;
     })();
     return `<div class="result-column">${productShowcase()}${quotePanel}</div>`;
@@ -859,9 +891,10 @@
     const isAdditionalInnerPages = Boolean(currentProduct.multiplyByInnerPages);
     const isBookTierPricing = currentProduct.pricingMode === "perBookTier";
     const usesOriginalPricing = currentProduct.pricingMode === "originalHighest";
+    const quantityOptions = quantityOptionsFor(currentProduct, currentSpec());
     const quantityLabel = currentProduct.category === "cookbook" ? "菜谱本数量（本）" : currentProduct.id === "table-sign-menu" ? "总数量（个）" : currentProduct.id === "multipart-form" ? "总数量（本）" : "总数量（张）";
-    const quantityControl = currentProduct.quantityOptions?.length
-      ? `<select data-field="quantity" aria-label="${attr(quantityLabel)}">${currentProduct.quantityOptions.map((quantity) => `<option value="${quantity}" ${String(quantity) === String(state.quantity) ? "selected" : ""}>${quantity === 10000 ? "1万" : quantity} ${escapeHtml(currentProduct.quantityUnit || "张")}</option>`).join("")}</select>`
+    const quantityControl = quantityOptions.length
+      ? `<select data-field="quantity" aria-label="${attr(quantityLabel)}">${quantityOptions.map((quantity) => `<option value="${quantity}" ${String(quantity) === String(state.quantity) ? "selected" : ""}>${quantity === 20000 ? "2万" : quantity === 10000 ? "1万" : quantity} ${escapeHtml(currentProduct.quantityUnit || "张")}</option>`).join("")}</select>`
       : `<input type="number" min="1" step="1" data-field="quantity" value="${attr(state.quantity)}">`;
     const chargesCookbookDesign = currentProduct.category === "cookbook" && currentProduct.id !== "additional-inner-pages";
     const styleFeeControl = chargesCookbookDesign
@@ -874,7 +907,7 @@
           <div class="section-title"><i></i><div><h2>产品信息</h2><p>先选大类，再选择具体品类并填写生产参数</p></div></div>
           <div class="parameter-row category-row"><div class="row-label category-main-label">第一步<br>选择大类</div><div class="category-selector"><div class="category-tabs">${categoryTabs()}</div><div class="category-detail-label"><b>${escapeHtml(productCategories.find((item) => item.id === state.categoryId)?.name || "")}</b><span>再选择下面的具体产品</span></div><div class="materials">${productCards()}</div></div></div>
           ${productSpecificationPanel()}
-          <div class="parameter-row"><div class="row-label">尺寸（厘米）</div><div class="size-inputs"><label><span>长边（cm）</span><input type="number" min="0" step="0.1" data-field="length" value="${attr(state.length)}" placeholder="例如 120"></label><b>×</b><label><span>短边（cm）</span><input type="number" min="0" step="0.1" data-field="width" value="${attr(state.width)}" placeholder="例如 80"></label><small>单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width) / 10000).toFixed(3) : "0.000"} ㎡</small></div></div>
+          <div class="parameter-row"><div class="row-label">尺寸（厘米）</div><div class="size-inputs"><label><span>长边（cm）</span><input type="number" min="0" step="0.1" data-field="length" value="${attr(state.length)}" placeholder="例如 120" ${currentProduct.fixedSpecPricing ? "readonly" : ""}></label><b>×</b><label><span>短边（cm）</span><input type="number" min="0" step="0.1" data-field="width" value="${attr(state.width)}" placeholder="例如 80" ${currentProduct.fixedSpecPricing ? "readonly" : ""}></label><small>${currentProduct.fixedSpecPricing ? "尺寸由价格表规格自动填写" : `单张面积：${num(state.length) && num(state.width) ? (num(state.length) * num(state.width) / 10000).toFixed(3) : "0.000"} ㎡`}</small></div></div>
           ${currentProduct.category === "cookbook" ? `<div class="parameter-row"><div class="row-label">内页张数</div><div class="inner-page-input"><label><span>多少张内页</span><input type="number" min="1" step="1" data-field="inner-pages" value="${attr(state.innerPages)}" placeholder="例如 8"><i>张</i></label><strong class="page-conversion">${Math.max(0, Math.floor(num(state.innerPages))) ? `＝ ${Math.floor(num(state.innerPages)) * 2} 页` : "1 张＝2 页"}</strong><small>${usesOriginalPricing ? "系统会按原表对应的内页张数档位取最高价" : isBookTierPricing ? `已包含 ${currentProduct.bookPricing.includedInnerPages} 张（${currentProduct.bookPricing.includedInnerPages * 2} 页）内页；超过部分每张每本另加 ${money(currentProduct.bookPricing.extraInnerPagePrice)}` : isAdditionalInnerPages ? "另加内页按单张面积 × 内页张数 × 菜谱本数量计价；页面数仅作显示" : "请输入实际纸张张数，系统自动换算页面数"}</small></div></div>` : ""}
           ${productOptionRows()}
           <div class="parameter-row"><div class="row-label">数量与款数</div><div class="quantity-grid"><label><span>${escapeHtml(quantityLabel)}</span>${quantityControl}</label><label><span>款数</span><input type="number" min="1" step="1" data-field="styles" value="${attr(state.styles)}"></label><label><span>${chargesCookbookDesign ? "菜谱追加款式设计费" : "每款设计/开机费"}</span>${styleFeeControl}</label></div></div>
@@ -884,7 +917,7 @@
             <label class="${state.minimumMode === "50" ? "selected" : ""}"><input type="radio" name="minimum" data-minimum="50" ${state.minimumMode === "50" ? "checked" : ""}><b>最低 50 元</b></label>
             <label class="${state.minimumMode === "custom" ? "selected" : ""} custom-minimum"><input type="radio" name="minimum" data-minimum="custom" ${state.minimumMode === "custom" ? "checked" : ""}><b>自定义</b><input type="number" min="0" data-field="custom-minimum" value="${attr(state.customMinimum)}"><small>元</small></label>
           </div></div>
-          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${currentProduct.pricingMode === "originalHighest" ? `按原表最高价 · 系数${num(currentProduct.priceFactor, 100)}%` : currentProduct.pricingMode === "photoAreaTier" ? `10㎡起按20/12/10元阶梯计价 · 系数${num(currentProduct.priceFactor, 100)}%` : isBookTierPricing ? "按每本阶梯单价" : `${money(currentProduct.rate)}/㎡`}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
+          <div class="calculate-bar"><div><span>当前品类</span><b>${escapeHtml(currentProduct.name)}</b><small>${pricingModeSummary(currentProduct)}</small></div><button class="calculate-button" data-action="calculate">立即算价 <span>→</span></button></div>
         </div>
         ${resultPanel(latestResult)}
       </section>`;
@@ -958,6 +991,11 @@
           state.length = selectedSpec.length ? String(centimetres(selectedSpec.length)) : "";
           state.width = selectedSpec.width ? String(centimetres(selectedSpec.width)) : "";
         }
+        const quantityOptions = quantityOptionsFor(product(), selectedSpec);
+        if (quantityOptions.length && !quantityOptions.includes(Math.floor(num(state.quantity)))) {
+          state.quantity = String(quantityOptions[0]);
+        }
+        state.productOptions = optionStateFor(product());
         state.resultVisible = false;
       }
     } else if (action === "calculate") {
@@ -967,7 +1005,7 @@
       }
       latestResult = calculate();
       if (!latestResult) {
-        notify("请先输入正确的长边和短边");
+        notify(product().fixedSpecPricing ? "该规格、数量或覆膜组合在价格表中没有报价" : "请先输入正确的长边和短边");
         return;
       }
       state.resultVisible = true;

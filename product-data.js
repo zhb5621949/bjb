@@ -14,6 +14,17 @@
     { id: "60x90", label: "60 × 90 cm", length: 0.9, width: 0.6 },
     { id: "custom", label: "定制尺寸", custom: true },
   ];
+  const stickerPosterSpecs = [
+    { id: "9x5-4", label: "小规格｜9 × 5.4 cm", length: 0.09, width: 0.054, quantityOptions: [500, 1000, 2000, 3000, 5000, 10000, 20000] },
+    { id: "9x11", label: "小规格｜9 × 11 cm", length: 0.11, width: 0.09, quantityOptions: [200, 500, 1000, 2000, 3000, 5000, 10000, 20000] },
+    { id: "10x15", label: "小规格｜10 × 15 cm", length: 0.15, width: 0.1, quantityOptions: [200, 500, 1000, 2000, 3000, 5000, 10000, 20000] },
+    { id: "14x21", label: "小规格｜14 × 21 cm", length: 0.21, width: 0.14, quantityOptions: [200, 500, 1000, 2000, 3000, 5000, 10000] },
+    { id: "a4-21x28-5", label: "A4｜21 × 28.5 cm", length: 0.285, width: 0.21, quantityOptions: [1000, 2000, 3000, 5000, 10000] },
+    { id: "a3-28-5x42", label: "A3｜28.5 × 42 cm", length: 0.42, width: 0.285, quantityOptions: [500, 1000, 2000, 3000, 5000, 10000] },
+    { id: "42x57", label: "海报｜42 × 57 cm", length: 0.57, width: 0.42, quantityOptions: [100, 200, 500, 1000, 2000, 3000, 5000] },
+    { id: "57x85", label: "海报｜57 × 85 cm", length: 0.85, width: 0.57, quantityOptions: [100, 200, 500, 1000, 2000, 3000, 5000] },
+    { id: "85x115", label: "标准海报｜85 × 115 cm", length: 1.15, width: 0.85, quantityOptions: [100, 200] },
+  ];
 
   window.PRODUCT_CATALOG = [
     {
@@ -121,7 +132,7 @@
       { id: "a4", label: "A4｜20 × 28.5 cm左右", length: 0.285, width: 0.2 }, { id: "a3", label: "A3｜28.5 × 40 cm左右", length: 0.4, width: 0.285 },
     ] },
     { id: "kt-board-poster", category: "other", name: "KT板海报", rate: 55, minimum: 50, tone: "pearl", innerMaterial: "5 毫米厚度 KT 板", materialProcess: "写真机印刷", specs: posterSpecs },
-    { id: "sticker-poster", category: "other", name: "不干胶海报", rate: 42, minimum: 40, tone: "cyan", innerMaterial: "不干胶", materialProcess: "印刷机印刷", specs: posterSpecs },
+    { id: "sticker-poster", category: "other", name: "不干胶海报", rate: 42, minimum: 40, tone: "cyan", innerMaterial: "不干胶", materialProcess: "印刷机印刷 / 覆膜", specs: stickerPosterSpecs, fixedSpecPricing: true },
     { id: "photo-poster", category: "other", name: "写真海报", rate: 36, minimum: 40, tone: "rose", innerMaterial: "防水防晒 PP 海报纸材料", materialProcess: "写真机印刷", specs: [
       ...posterSpecs.slice(0, 4),
       { id: "80x100", label: "80 × 100 cm", length: 1, width: 0.8 },
@@ -155,6 +166,9 @@
       shellMaterial: ["硬质外壳", "皮质外壳", "软质皮革外壳"],
       innerMaterial: ["加厚 PVC 内页", "250 克铜版纸内页"],
     },
+    "sticker-poster": {
+      materialProcess: ["印刷机印刷", "覆膜"],
+    },
   };
 
   const groupDefinitions = [
@@ -175,9 +189,17 @@
   }
 
   const photoAreaTierProductIds = new Set(["photo-menu", "photo-poster"]);
+  const stickerTableProductIds = new Set(["sticker-poster"]);
+  const indoorLightTierProductIds = new Set(["indoor-light-film"]);
 
   window.PRODUCT_CATALOG.forEach((product) => {
-    product.pricingMode = photoAreaTierProductIds.has(product.id) ? "photoAreaTier" : "originalHighest";
+    product.pricingMode = photoAreaTierProductIds.has(product.id)
+      ? "photoAreaTier"
+      : stickerTableProductIds.has(product.id)
+        ? "stickerTable"
+        : indoorLightTierProductIds.has(product.id)
+          ? "indoorLightTier"
+          : "originalHighest";
     if (photoAreaTierProductIds.has(product.id)) {
       product.areaPricingTiers = [
         { min: 10, max: 15, rate: 20 },
@@ -213,5 +235,14 @@
         };
       })
       .filter(Boolean);
+    if (product.id === "sticker-poster") {
+      const processGroup = product.optionGroups.find((group) => group.id === "material-process");
+      if (processGroup) {
+        processGroup.name = "工艺";
+        processGroup.items.forEach((item) => {
+          item.checked = item.name === "印刷机印刷";
+        });
+      }
+    }
   });
 })();

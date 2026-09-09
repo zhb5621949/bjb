@@ -1,7 +1,7 @@
 {
-  "version": 27,
-  "updatedAt": "2026-08-13T12:00:00+08:00",
-  "note": "以20241025完整报价表为主，合并原表同档最高价；产品卡片使用完整表内分类实物图，管理端可按品类调整原表价系数",
+  "version": 28,
+  "updatedAt": "2026-09-09T11:03:26+08:00",
+  "note": "V28：不干胶海报按新Excel固定规格数量价格计算，区间取最高价；室内灯片总面积4平方米及以上按30元/平方米",
   "styleFeeDefault": 10,
   "cookbookDesignFeePerStyle": 100,
   "categories": [
@@ -97,6 +97,7 @@
       "rate": 50,
       "minimum": 40,
       "tone": "cyan",
+      "pricingMode": "stickerTable",
       "priceFactor": 100
     },
     {
@@ -304,6 +305,7 @@
       "rate": 45,
       "minimum": 50,
       "tone": "sun",
+      "pricingMode": "indoorLightTier",
       "priceFactor": 100
     },
     {
